@@ -1,0 +1,140 @@
+I want you to redesign the existing SAHM website to closely match the reference design image I uploaded.
+
+The reference image is my approved visual direction. The current website does NOT match it, and I want a significant visual improvement, not minor cosmetic changes.
+
+## 1. Overall design direction
+
+Recreate the visual language of the reference image as closely as possible:
+
+- Premium Kuwaiti FinTech platform aesthetic.
+- Deep forest green, emerald green, warm ivory, soft beige, and white.
+- Elegant Arabic typography with strong visual hierarchy.
+- Rounded cards, subtle shadows, clean spacing, and professional financial dashboards.
+- A sophisticated, image-rich interface rather than a plain text-heavy landing page.
+
+Do not use the current generic SaaS landing-page style.
+
+## 2. Branding and logo
+
+REMOVE the current square icon containing the Arabic letter "س".
+
+Replace it with a professional SAHM logo inspired by the reference image:
+
+- A clean upward-trending financial arrow symbol.
+- SAHM in English.
+- سهم in Arabic.
+- Dark green branding.
+- Consistent logo across the header, dashboard, mobile navigation, and report pages.
+
+Do not use an isolated Arabic letter as the logo.
+
+## 3. Homepage
+
+Redesign the homepage to match the reference composition.
+
+Hero section:
+
+- Large, bold Arabic headline: "افهم الأرقام قبل القرار."
+- Supporting description: "سهم منصة ذكية تساعدك على فهم التقارير المالية للشركات المدرجة في بورصة الكويت، بلغة بسيطة وواضحة."
+- Primary CTA: "رفع تقرير مالي"
+- Prominent imagery of Kuwait's skyline and Kuwait Towers.
+- Elegant overlapping financial report cards, using real verified data only.
+- Dark green CTA buttons and warm ivory background.
+
+Add a clear feature section explaining:
+
+- AI-powered financial report analysis.
+- Simplified financial terminology.
+- Source-based financial explanations.
+- Designed for beginner investors in Kuwait.
+
+## 4. Kuwait identity
+
+Integrate high-quality, authentic photographs of:
+
+- Kuwait Towers and Kuwait City skyline.
+- Boursa Kuwait building.
+
+Use these images in meaningful sections similar to the reference image, not as random decorations.
+
+Use properly licensed images from trustworthy sources. Do not use broken image links or unauthorized copyrighted assets.
+
+## 5. Dashboard
+
+Redesign the dashboard to closely resemble the reference:
+
+- Dark forest-green sidebar.
+- White and ivory dashboard background.
+- Rounded financial metric cards.
+- Professional charts and financial visualizations.
+- Clear company name and reporting period.
+- Source references for extracted figures.
+- Arabic-friendly right-to-left layout.
+
+IMPORTANT: Do not invent financial numbers or display fabricated company performance. Use real extracted report data. If data is unavailable, display an appropriate empty state.
+
+## 6. PDF upload and analysis
+
+Redesign the PDF upload experience to match the reference:
+
+- Clean drag-and-drop upload area.
+- Elegant upload icon.
+- Clear file requirements.
+- Professional loading and error states.
+- Easy navigation to the analysis dashboard.
+
+Keep the existing upload, extraction, AI analysis, and database functionality intact.
+
+## 7. Financial explanations
+
+Create elegant expandable explanation cards similar to the reference.
+
+Each explanation should support:
+
+- Arabic and English.
+- Simple financial language.
+- Source page references where available.
+- Clear financial terminology.
+- Real verified extracted figures.
+
+## 8. Responsive design
+
+The website must work beautifully on desktop, tablet, and mobile.
+
+On mobile:
+
+- Use a compact navigation menu.
+- Stack dashboard cards vertically.
+- Maintain Arabic RTL support.
+- Keep upload and analysis actions easy to access.
+
+## 9. Preserve existing functionality
+
+CRITICAL:
+
+- Do not rebuild the project from scratch.
+- Do not remove existing features.
+- Do not break MongoDB connections.
+- Do not change working API endpoints or AI integration.
+- Do not modify stored user data.
+- Do not replace real functionality with mock data.
+- Do not add fake financial statistics.
+
+Use the reference image as the primary visual specification, while adapting it into a real, responsive website.
+
+## 10. Implementation and verification
+
+First inspect the existing application and create a safe checkpoint.
+
+Then implement the redesign in the actual SAHM application, not only in an isolated preview sandbox.
+
+After implementation:
+
+- Run the application.
+- Verify the homepage and dashboard.
+- Test mobile responsiveness.
+- Confirm that PDF upload and financial analysis still work.
+- Confirm that MongoDB functionality is preserved.
+- Show me the final updated preview and summarize all changes.
+
+My goal is for SAHM to look and feel like a polished, Kuwait-focused financial technology platform, closely matching my uploaded reference design.

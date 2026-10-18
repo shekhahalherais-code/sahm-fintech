@@ -6,11 +6,11 @@ import {
   useGenerateReportExplanations,
   useGetFinancialReport,
 } from '@workspace/api-client-react';
-import { AlertCircle, ArrowLeft, Download, FileText, Lightbulb, Printer } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BookOpen, ChartNoAxesCombined, Download, FileSearch, FileText, LayoutDashboard, Lightbulb, Printer, Settings2 } from 'lucide-react';
 
 const words = {
   en: {
-    back: 'Back to upload', overline: 'FINANCIAL DASHBOARD', report: 'Financial dashboard', filename: 'Source document',
+    back: 'Back to upload', overline: 'FINANCIAL DASHBOARD', report: 'Financial dashboard', filename: 'Source document', navigation: 'REPORT WORKSPACE', overview: 'Overview', figuresNav: 'Extracted figures', learning: 'Plain-language guide', settings: 'Report details', welcome: 'A clearer view of this report', welcomeSub: 'Figures below are reproduced from the source document. Nothing here is a recommendation.', summaryLabel: 'REPORT SNAPSHOT', sourcePages: 'Source pages', availableFigures: 'Extracted figures', verifiedFigures: 'Verified figures',
     company: 'Company', period: 'Reporting period', currency: 'Currency', scale: 'Unit scale',
     unavailable: 'Unavailable in report', metrics: 'Extracted figures', metricsSub: 'Values are shown as reported in the source document.',
     noMetrics: 'No figures could be extracted from this report.', category: 'Category', value: 'Reported value',
@@ -32,7 +32,7 @@ const words = {
     categories: { revenue: 'Revenue', net_profit: 'Net profit', assets: 'Assets', liabilities: 'Liabilities', equity: 'Equity', other: 'Other' },
   },
   ar: {
-    back: 'العودة إلى رفع التقرير', overline: 'لوحة التقرير المالية', report: 'لوحة التقرير المالية', filename: 'المستند المصدر',
+    back: 'العودة إلى رفع التقرير', overline: 'لوحة التقرير المالية', report: 'لوحة التقرير المالية', filename: 'المستند المصدر', navigation: 'مساحة التقرير', overview: 'نظرة عامة', figuresNav: 'الأرقام المستخرجة', learning: 'قراءة مبسطة', settings: 'تفاصيل التقرير', welcome: 'قراءة أوضح لهذا التقرير', welcomeSub: 'الأرقام أدناه منقولة من المستند المصدر. ولا تمثل توصية استثمارية.', summaryLabel: 'ملخص التقرير', sourcePages: 'صفحات المصدر', availableFigures: 'الأرقام المستخرجة', verifiedFigures: 'أرقام تم التحقق منها',
     company: 'الشركة', period: 'الفترة المالية', currency: 'العملة', scale: 'مقياس الوحدة',
     unavailable: 'غير متوفر في التقرير', metrics: 'الأرقام المستخرجة', metricsSub: 'تُعرض القيم كما وردت في المستند المصدر.',
     noMetrics: 'تعذّر استخراج أرقام من هذا التقرير.', category: 'الفئة', value: 'القيمة المنشورة',
@@ -149,24 +149,36 @@ export default function ReportReviewPage() {
   const maxMagnitude = chartReady ? Math.max(...chartGroup.map(entry => Math.abs(entry.numeric)), Number.EPSILON) : 1;
   const explanations = report.explanations;
   const summary = explanations ? (language === 'ar' ? explanations.summaryArabic : explanations.summaryEnglish) : null;
+  const verifiedCount = report.metrics.filter(metric => metric.verificationStatus === 'verified').length;
+  const metricsByCategory = new Map(report.metrics.map((metric) => [metric.category, metric]));
+  const summaryCategories = ['revenue', 'net_profit', 'assets', 'equity'] as const;
 
   return (
-    <main className="app-shell report-app" dir={dir} lang={language}>
-      <header className="topbar">
-        <Link href="/" className="brand" aria-label="SAHM home" data-testid="link-home">
-          <span className="brand-mark">س</span><span className="brand-name">SAHM</span><span className="brand-ar">سهم</span>
-        </Link>
-        <div className="header-right">
-          <span className="header-note">{t.overline}</span>
-          <button className="language-toggle" type="button" onClick={changeLanguage} data-testid="button-language">
-            {language === 'en' ? 'العربية' : 'English'}
-          </button>
+    <main className="report-dashboard" dir={dir} lang={language}>
+      <aside className="dashboard-rail">
+        <Link href="/" className="rail-brand" aria-label="SAHM home" data-testid="link-home"><span className="rail-brand-mark">س</span><span><b>SAHM</b><small>سهم</small></span></Link>
+        <div className="rail-caption">{t.navigation}</div>
+        <nav className="rail-nav" aria-label={t.navigation}>
+          <a className="rail-link active" href="#report-overview"><LayoutDashboard size={17} /><span>{t.overview}</span></a>
+          <a className="rail-link" href="#extracted-figures"><FileSearch size={17} /><span>{t.figuresNav}</span></a>
+          <a className="rail-link" href="#plain-language"><BookOpen size={17} /><span>{t.learning}</span></a>
+          <a className="rail-link" href="#report-details"><Settings2 size={17} /><span>{t.settings}</span></a>
+        </nav>
+        <div className="rail-bottom">
+          <div className="rail-note"><span className="rail-note-mark"><FileText size={15} /></span><span><b>{t.filename}</b><small>{report.originalFileName}</small></span></div>
+          <Link href="/" className="rail-back" data-testid="link-back-home"><ArrowLeft size={15} />{t.back}</Link>
         </div>
-      </header>
-
-      <div className="report-wrap">
-        <Link href="/" className="back-link" data-testid="link-back-home"><ArrowLeft size={15} />{t.back}</Link>
-        <div className="report-head">
+      </aside>
+      <div className="dashboard-main">
+        <header className="dashboard-topbar">
+          <div className="topbar-context"><span className="context-dot" />{t.overline}<span className="context-divider">/</span>{report.originalFileName}</div>
+          <div className="header-right">
+            <span className="dashboard-locale">{language === 'ar' ? 'العربية' : 'EN'}</span>
+            <button className="language-toggle" type="button" onClick={changeLanguage} data-testid="button-language">{language === 'en' ? 'العربية' : 'English'}</button>
+          </div>
+        </header>
+        <div className="report-wrap">
+        <div className="report-head" id="report-overview">
           <div><div className="report-overline">{t.overline}</div><h1 className="report-heading">{report.companyName || t.report}</h1>
             <div className="report-filename"><FileText size={14} style={{ verticalAlign: 'middle', marginInlineEnd: 6 }} />{report.originalFileName}</div>
           </div>
@@ -176,7 +188,26 @@ export default function ReportReviewPage() {
           </div>
         </div>
 
-        <section className="report-card" aria-label={t.report}>
+        <section className="snapshot-banner">
+          <div className="snapshot-copy"><span className="snapshot-eyebrow">{t.summaryLabel}</span><h2>{t.welcome}</h2><p>{t.welcomeSub}</p></div>
+          <div className="snapshot-meta">
+            <div><span>{t.period}</span><strong>{unavailable(report.reportingPeriod, t.unavailable)}</strong></div>
+            <div><span>{t.currency} · {t.scale}</span><strong>{[report.currency, unitLabel].filter(Boolean).join(' · ') || t.unavailable}</strong></div>
+          </div>
+        </section>
+
+        <section className="summary-grid" aria-label={t.summaryLabel}>
+          {summaryCategories.map((category, index) => {
+            const metric = metricsByCategory.get(category);
+            return <article className={`summary-card summary-card-${index + 1}`} key={category} data-testid={`summary-${category}`}>
+              <div className="summary-card-top"><span className="summary-card-label">{t.metricLabels[category]}</span><span className="summary-card-icon"><ChartNoAxesCombined size={15} /></span></div>
+              <strong className="summary-card-value">{metric?.reportedValue ? metric.reportedValue : <span className="unavailable">{t.unavailable}</span>}</strong>
+              <div className="summary-card-foot">{metric ? <>{metric.currency || t.unavailable}{metric.unitScale !== 'unknown' ? ` · ${t[metric.unitScale]}` : ''} <span className={`status-pip status-${metric.verificationStatus}`} />{metric.verificationStatus === 'verified' ? t.verified : metric.verificationStatus === 'unverified' ? t.unverified : t.missing}</> : t.unavailable}</div>
+            </article>;
+          })}
+        </section>
+
+        <section className="report-card report-meta-card" id="report-details" aria-label={t.report}>
           <div className="report-card-header"><div><div className="section-title">{t.report}</div><div className="section-kicker">{t.filename}</div></div></div>
           <div className="meta-grid">
             <Meta label={t.company} value={report.companyName} empty={t.unavailable} testId="text-company" />
@@ -186,7 +217,7 @@ export default function ReportReviewPage() {
           </div>
         </section>
 
-        <section className="report-card">
+        <section className="report-card" id="extracted-figures">
           <div className="report-card-header">
             <div><div className="section-title">{t.metrics}</div><div className="section-kicker">{t.metricsSub}</div></div>
             <div className="step-index">{t.status}</div>
@@ -213,7 +244,7 @@ export default function ReportReviewPage() {
           }
         </section>
 
-        <section className="report-card" aria-labelledby="chart-heading">
+        <section className="report-card chart-card" aria-labelledby="chart-heading">
           <div className="report-card-header"><div><div className="section-title" id="chart-heading">{t.chartTitle}</div><div className="section-kicker">{t.chartCaption}</div></div></div>
           {chartReady ? <div className="visual-panel">
             <p className="visual-caption">{chartGroup[0].metric.reportingPeriod} · {chartGroup[0].metric.currency} · {t[chartGroup[0].metric.unitScale]}</p>
@@ -228,7 +259,7 @@ export default function ReportReviewPage() {
           </div> : <div className="empty-metrics" data-testid="empty-report-chart">{t.chartEmpty}</div>}
         </section>
 
-        <section className="report-card">
+        <section className="report-card" id="plain-language">
           <div className="report-card-header">
             <div><div className="section-title">{t.explanations}</div><div className="section-kicker">{t.explanationSub}</div></div>
             {explanations && <span className="step-index">{language === 'ar' ? 'شرح محفوظ' : 'SAVED EXPLANATION'}</span>}
@@ -263,10 +294,15 @@ export default function ReportReviewPage() {
         <section className="print-summary" aria-label={t.printTitle}>
           <h2>{t.printTitle}</h2>
           <p>{t.printSource}: {report.originalFileName}</p>
+          <p>{t.period}: {report.reportingPeriod || t.unavailable} · {t.currency}: {report.currency || t.unavailable} · {t.scale}: {unitLabel}</p>
+          <h3>{t.metrics}</h3>
+          {report.metrics.map((metric, index) => <p key={`${metric.label}-${index}`}>{t.metricLabels[metric.category] ?? metric.label}: {metric.reportedValue || t.unavailable} · {t.page} {metric.sourcePage ?? t.unavailable}{metric.sourceExcerpt ? ` — ${metric.sourceExcerpt}` : ''}</p>)}
+          {summary && <><h3>{t.explanations}</h3><p>{summary}</p></>}
           <p>{t.printDisclaimer}</p>
         </section>
       </div>
-      <footer className="page-footer"><span className="footer-brand">SAHM · سهم</span><span>{report.originalFileName}</span></footer>
+      <footer className="page-footer"><span className="footer-brand">SAHM · سهم</span><span>{t.source}: {report.originalFileName}</span></footer>
+      </div>
     </main>
   );
 }
