@@ -1,0 +1,111 @@
+I want to improve the EXISTING SAHM financial dashboard and AI explanation interface to accurately match my attached Google Stitch screenshots.
+
+The application is already functional. PDF upload, financial data extraction, AI analysis, MongoDB saving, and report retrieval must continue working.
+
+**Do not rebuild the application. This is a targeted frontend improvement with minimal, backward-compatible data changes only if necessary.**
+
+## 1. Match the attached financial dashboard screenshot
+
+Recreate the visual layout as closely as possible:
+- Four clean financial metric cards in one row on desktop
+- Financial metric name, actual value, unit, and source page
+- A small growth indicator beside each applicable metric
+- Minimal white/ivory background and dark emerald-green accents
+- A simple, elegant financial chart below the metric cards
+- Correct Arabic RTL alignment and responsive mobile layout
+
+Use the screenshot as the primary visual reference, not just inspiration.
+
+## 2. Make financial metrics interactive
+
+When a user clicks a financial metric card or selects a metric in the explanation page, show a clear explanation panel matching the second attached Stitch screenshot.
+
+The panel must contain these three sections:
+
+**ما هو هذا الرقم؟**
+Explain what the financial metric means in simple Arabic, using language understandable to someone with no financial background.
+
+**ماذا يعني للمستثمر المبتدئ؟**
+Explain why this metric matters, what it can indicate, and what a beginner should consider when interpreting it.
+
+Do not provide personalized investment advice, buy/sell recommendations, or unsupported conclusions.
+
+**مرجع الرقم في التقرير الأصلي**
+Show the actual source document, page number, and relevant evidence from the uploaded financial report.
+
+Only show verified references from the existing extraction data. Do not invent page numbers or citations.
+
+## 3. Add growth and comparison indicators
+
+For metrics with valid comparable historical data, calculate:
+
+Percentage change = ((Current value - Previous value) / abs(Previous value)) × 100
+
+Handle zero, missing, negative, and non-comparable prior values safely.
+
+Display a small arrow and percentage badge beside the metric.
+
+Use:
+- Green only when the movement is reasonably favorable for that specific metric
+- Red only when the movement is reasonably unfavorable
+- Neutral styling when the interpretation is uncertain or context-dependent
+
+Do not automatically treat all increases as positive or all decreases as negative.
+
+If no reliable historical comparison exists, show no growth percentage.
+
+Never use the demo percentages or sample figures from the screenshots as real financial data.
+
+## 4. Match the explanation page design
+
+Use the attached Stitch explanation screenshot as the exact layout reference.
+
+Preserve:
+- The metric selection tabs
+- The large selected metric value and unit
+- The growth indicator beside the metric
+- The three explanation sections
+- The original source reference
+- The back-to-dashboard navigation
+- The PDF summary download button
+
+Use the existing real AI-generated explanations and financial data.
+
+If a required explanation or historical comparison is missing, display a clear unavailable state rather than inventing information.
+
+## 5. Preserve existing functionality
+
+DO NOT break or replace:
+- PDF upload and extraction
+- AI financial analysis
+- Arabic and English explanations
+- MongoDB Atlas integration
+- Report saving and retrieval
+- Existing authentication work
+- Backend API routes
+- Source citations
+- PDF summary generation
+- Existing report data
+
+Do not modify MongoDB credentials, connection settings, or unrelated backend code.
+
+If the existing backend does not expose the necessary historical values or source evidence, identify the exact missing fields first and propose the smallest safe, backward-compatible change.
+
+Do not implement backend or database changes without my approval.
+
+## 6. Implementation and verification
+
+1. Inspect the existing dashboard and explanation components.
+2. Review both attached Stitch screenshots carefully.
+3. Confirm a rollback checkpoint exists.
+4. Explain exactly which files need to change.
+5. Implement the frontend changes after approval.
+6. Test the interface with a real uploaded financial report.
+7. Verify that every displayed figure matches the saved report data.
+8. Verify that source references are accurate.
+9. Test Arabic RTL, English LTR, desktop, and mobile.
+10. Confirm that PDF upload, MongoDB retrieval, AI explanations, and PDF summary download still work.
+
+**Important: The Stitch screenshots are the visual specification. The existing backend and saved report data are the source of truth for functionality and financial values.**
+
+First provide a short implementation plan and wait for my approval before making changes.
