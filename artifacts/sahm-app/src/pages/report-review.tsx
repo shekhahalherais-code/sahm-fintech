@@ -159,10 +159,10 @@ export default function ReportReviewPage() {
         <Link href="/" className="rail-brand" aria-label="SAHM home" data-testid="link-home"><span className="rail-brand-mark">س</span><span><b>SAHM</b><small>سهم</small></span></Link>
         <div className="rail-caption">{t.navigation}</div>
         <nav className="rail-nav" aria-label={t.navigation}>
-          <a className="rail-link active" href="#report-overview"><LayoutDashboard size={17} /><span>{t.overview}</span></a>
-          <a className="rail-link" href="#extracted-figures"><FileSearch size={17} /><span>{t.figuresNav}</span></a>
-          <a className="rail-link" href="#plain-language"><BookOpen size={17} /><span>{t.learning}</span></a>
-          <a className="rail-link" href="#report-details"><Settings2 size={17} /><span>{t.settings}</span></a>
+          <a className="rail-link active" href="#report-overview" aria-label={t.overview} aria-current="page"><LayoutDashboard size={17} /><span>{t.overview}</span></a>
+          <a className="rail-link" href="#extracted-figures" aria-label={t.figuresNav}><FileSearch size={17} /><span>{t.figuresNav}</span></a>
+          <Link className="rail-link" href={`/reports/${encodeURIComponent(reportId)}/explanations`} aria-label={t.learning} data-testid="link-report-explanations"><BookOpen size={17} /><span>{t.learning}</span></Link>
+          <a className="rail-link" href="#report-details" aria-label={t.settings}><Settings2 size={17} /><span>{t.settings}</span></a>
         </nav>
         <div className="rail-bottom">
           <div className="rail-note"><span className="rail-note-mark"><FileText size={15} /></span><span><b>{t.filename}</b><small>{report.originalFileName}</small></span></div>
@@ -252,7 +252,7 @@ export default function ReportReviewPage() {
               {chartGroup.map(({ metric, numeric }, index) => <div className="chart-column" key={`${metric.label}-${index}`}>
                 <div className="chart-value">{metric.reportedValue}</div>
                 <div className="chart-track"><div className="chart-bar" style={{ height: `${numeric === 0 ? 0 : Math.abs(numeric) / maxMagnitude * 100}%` }} /></div>
-                <div className="chart-label">{metric.label}</div>
+                <div className="chart-label">{t.metricLabels[metric.category] ?? metric.label}</div>
                 <div className="chart-meta">{metric.sourcePage !== null ? `${t.page} ${metric.sourcePage}` : t.unavailable}</div>
               </div>)}
             </div>
@@ -285,6 +285,7 @@ export default function ReportReviewPage() {
           </div>}
           {explain.isError && <div className="explanation-error" role="alert">{t.explanationError}</div>}
         </section>
+          <div className="explanation-route-action"><Link className="action-button primary" href={`/reports/${encodeURIComponent(reportId)}/explanations`} data-testid="link-open-explanations"><BookOpen size={14} />{language === 'ar' ? 'فتح صفحة القراءة المبسطة' : 'Open plain-language guide'}</Link></div>
 
         <section className="notes-card" data-testid="section-extraction-notes">
           <div className="notes-title">{t.notes}</div>
