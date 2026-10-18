@@ -1,1 +1,2 @@
 - [Atlas network access](atlas-network-access.md) — Replit development egress can change; check the current address and allowlist it for Atlas.
+- [Arabic financial PDFs](arabic-financial-pdfs.md) — PDF.js can split table numerals and punctuation into positioned fragments; use statement headers and coordinates.

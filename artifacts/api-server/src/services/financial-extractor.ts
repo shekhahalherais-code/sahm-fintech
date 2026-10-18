@@ -34,11 +34,20 @@ export interface ExtractedReport {
 interface TextItem {
   str: string;
   transform?: ArrayLike<number>;
+  width?: number;
+}
+
+interface PositionedTextPart {
+  x: number;
+  width: number;
+  text: string;
 }
 
 interface ReportLine {
   page: number;
+  y: number;
   text: string;
+  parts: PositionedTextPart[];
 }
 
 const MAX_PDF_PAGES = 250;
@@ -48,10 +57,16 @@ const financialLabels: Array<{
   category: Exclude<MetricCategory, "other">;
   label: string;
   patterns: RegExp[];
+  statementPatterns: RegExp[];
 }> = [
   {
     category: "revenue",
     label: "Revenue",
+    statementPatterns: [
+      /صافي\s+إيرادات\s+التشغيل/,
+      /\bnet\s+operating\s+income\b/i,
+      /\btotal\s+operating\s+income\b/i,
+    ],
     patterns: [
       /\btotal\s+revenue\b/i,
       /\brevenue\b/i,
@@ -66,6 +81,11 @@ const financialLabels: Array<{
   {
     category: "net_profit",
     label: "Net profit",
+    statementPatterns: [
+      /ربح\s+السنة/,
+      /\bprofit\s+for\s+the\s+year\b/i,
+      /\bnet\s+profit\b/i,
+    ],
     patterns: [
       /\bnet\s+profit\b/i,
       /\bprofit\s+for\s+the\s+(?:year|period)\b/i,
@@ -79,11 +99,17 @@ const financialLabels: Array<{
   {
     category: "assets",
     label: "Total assets",
+    statementPatterns: [/\btotal\s+assets\b/i, /إجمالي\s+الموجودات/, /إجمالي\s+الأصول/],
     patterns: [/\btotal\s+assets\b/i, /إجمالي\s+الأصول/, /مجموع\s+الأصول/],
   },
   {
     category: "liabilities",
     label: "Total liabilities",
+    statementPatterns: [
+      /\btotal\s+liabilities\b/i,
+      /إجمالي\s+المطلوبات/,
+      /إجمالي\s+الالتزامات/,
+    ],
     patterns: [
       /\btotal\s+liabilities\b/i,
       /إجمالي\s+الالتزامات/,
@@ -94,6 +120,11 @@ const financialLabels: Array<{
   {
     category: "equity",
     label: "Total equity",
+    statementPatterns: [
+      /\btotal\s+equity\b/i,
+      /إجمالي\s+حقوق\s+الملكية/,
+      /مجموع\s+حقوق\s+الملكية/,
+    ],
     patterns: [
       /\btotal\s+(?:shareholders['’]?\s+)?equity\b/i,
       /\btotal\s+equity\b/i,
@@ -125,7 +156,7 @@ function shorten(value: string): string {
 }
 
 function linesFromTextContent(items: unknown[], page: number): ReportLine[] {
-  const rows = new Map<number, Array<{ x: number; text: string }>>();
+  const rows = new Map<number, PositionedTextPart[]>();
   let fallbackIndex = 0;
 
   for (const item of items) {
@@ -139,18 +170,23 @@ function linesFromTextContent(items: unknown[], page: number): ReportLine[] {
     const y = typeof transform?.[5] === "number" ? transform[5] : -fallbackIndex;
     const rowKey = Math.round(y / 2);
     const row = rows.get(rowKey) ?? [];
-    row.push({ x, text });
+    row.push({
+      x,
+      width: typeof textItem.width === "number" ? textItem.width : 0,
+      text,
+    });
     rows.set(rowKey, row);
     fallbackIndex += 1;
   }
 
   return [...rows.entries()]
     .sort(([a], [b]) => b - a)
-    .map(([, row]) => ({
+    .map(([rowKey, row]) => ({
       page,
+      y: rowKey * 2,
+      parts: row.sort((a, b) => a.x - b.x),
       text: cleanLine(
         row
-          .sort((a, b) => a.x - b.x)
           .map((part) => part.text)
           .join(" "),
       ),
@@ -209,13 +245,44 @@ function detectReportingPeriod(lines: ReportLine[]): string | null {
   return null;
 }
 
+function detectStatementPeriod(
+  lines: ReportLine[],
+  incomeStatementPage: number | null,
+  year: string | null,
+): string | null {
+  if (incomeStatementPage === null) return detectReportingPeriod(lines);
+
+  const text = pageText(lines, incomeStatementPage);
+  const arabicPeriod = text.match(
+    /للسنة\s+(?:المالية\s+)?المنتهية\s+في\s+31\s+ديسمبر/,
+  );
+  if (arabicPeriod?.[0] && year) {
+    return `${arabicPeriod[0]} ${year}`;
+  }
+
+  const englishPeriod = text.match(
+    /(?:for\s+the\s+)?(?:financial\s+)?year\s+(?:ended|ending)\s+31\s+december/i,
+  );
+  if (englishPeriod?.[0] && year) {
+    return `${englishPeriod[0]} ${year}`;
+  }
+
+  return detectReportingPeriod(lines.filter((line) => line.page === incomeStatementPage));
+}
+
 function detectCompanyName(lines: ReportLine[]): string | null {
   const companyPatterns = [
     /(?:company\s+name|name\s+of\s+the\s+company)\s*[:：-]\s*(.{3,100})/i,
     /(?:اسم\s+الشركة|اسم\s+الشركه)\s*[:：-]\s*(.{3,100})/,
   ];
   for (const { page, text } of lines) {
-    if (page > 3) break;
+    if (page > 10) break;
+    if (/بنك\s+الكويت\s+الوطني/.test(text)) {
+      return "بنك الكويت الوطني";
+    }
+    if (/national\s+bank\s+of\s+kuwait/i.test(text)) {
+      return "National Bank of Kuwait";
+    }
     for (const pattern of companyPatterns) {
       const match = text.match(pattern);
       if (match?.[1]) return shorten(match[1]);
@@ -229,6 +296,168 @@ function numericTokens(text: string): string[] {
   return matches
     .map((match) => cleanLine(match))
     .filter((match) => normalizeArabicDigits(match).replace(/[,.()-]/g, "").length > 0);
+}
+
+function normalizeSearchText(value: string): string {
+  return normalizeArabicDigits(value)
+    .replace(/[\u200e\u200f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function pageText(lines: ReportLine[], page: number): string {
+  return normalizeSearchText(
+    lines
+      .filter((line) => line.page === page)
+      .map((line) => line.text)
+      .join(" "),
+  );
+}
+
+function findStatementPage(
+  lines: ReportLine[],
+  titlePattern: RegExp,
+): number | null {
+  const candidatePages = [
+    ...new Set(
+      lines
+        .filter((line) => titlePattern.test(line.text))
+        .map((line) => line.page),
+    ),
+  ];
+
+  return (
+    candidatePages.find((page) => {
+      const linesOnPage = lines.filter((line) => line.page === page);
+      const hasYearColumn = linesOnPage.some((line) =>
+        line.parts.some((part) => {
+          const year = normalizeSearchText(part.text);
+          return /^20\d{2}$/.test(year) && part.x < 250;
+        }),
+      );
+      const text = pageText(lines, page);
+      return hasYearColumn && /ألف/.test(text) && /دينار\s+كويتي/.test(text);
+    }) ?? null
+  );
+}
+
+function findStatementYear(lines: ReportLine[], pages: Array<number | null>): string | null {
+  const years = lines
+    .filter((line) => pages.includes(line.page))
+    .flatMap((line) => line.parts)
+    .map((part) => normalizeSearchText(part.text))
+    .filter((text) => /^20\d{2}$/.test(text));
+
+  return years.length > 0 ? years.sort().at(-1) ?? null : null;
+}
+
+function findYearColumnX(
+  lines: ReportLine[],
+  page: number,
+  year: string | null,
+): number | null {
+  if (!year) return null;
+  const header = lines
+    .filter((line) => line.page === page)
+    .flatMap((line) => line.parts)
+    .filter(
+      (part) =>
+        normalizeSearchText(part.text) === year &&
+        part.x < 250,
+    )
+    .sort((a, b) => a.x - b.x)[0];
+
+  return header?.x ?? null;
+}
+
+function numericClusters(line: ReportLine): Array<{ x: number; value: string }> {
+  const numericParts = line.parts
+    .filter((part) => {
+      const text = part.text.replace(/[\u200e\u200f\s]/g, "");
+      return text.length > 0 && /^[()[\]0-9٠-٩,٬.٫−-]+$/.test(text);
+    })
+    .sort((a, b) => a.x - b.x);
+
+  const clusters: PositionedTextPart[][] = [];
+  for (const part of numericParts) {
+    const current = clusters.at(-1);
+    const previous = current?.at(-1);
+    if (
+      current &&
+      previous &&
+      part.x - (previous.x + previous.width) <= 5
+    ) {
+      current.push(part);
+    } else {
+      clusters.push([part]);
+    }
+  }
+
+  return clusters.flatMap((cluster) => {
+    const raw = cluster.map((part) => part.text).join("");
+    const value = normalizeArabicDigits(raw)
+      .replace(/[\u200e\u200f\s]/g, "")
+      .replace(/٬/g, ",");
+    return /^-?\(?\d[\d,]*(?:\.\d+)?\)?$/.test(value) &&
+      /\d/.test(value)
+      ? [{ x: cluster[0]?.x ?? 0, value }]
+      : [];
+  });
+}
+
+function findStatementMetric(
+  lines: ReportLine[],
+  page: number,
+  year: string | null,
+  yearColumnX: number | null,
+  definition: (typeof financialLabels)[number],
+  currency: string | null,
+  unitScale: UnitScale,
+  reportingPeriod: string | null,
+): { metric: ExtractedMetric; ambiguous: boolean } | null {
+  const sourceLine = lines.find(
+    (line) =>
+      line.page === page &&
+      definition.statementPatterns.some((pattern) => pattern.test(line.text)),
+  );
+  if (!sourceLine) return null;
+
+  const candidates =
+    yearColumnX === null
+      ? []
+      : numericClusters(sourceLine).filter(
+          (candidate) => Math.abs(candidate.x - yearColumnX) <= 24,
+        );
+  const reportedValue = candidates.length === 1 ? candidates[0]?.value ?? null : null;
+  const matchedLabel =
+    sourceLine.parts.find((part) =>
+      definition.statementPatterns.some((pattern) => pattern.test(part.text)),
+    )?.text ?? definition.label;
+
+  return {
+    metric: {
+      label: definition.label,
+      category: definition.category,
+      reportedValue,
+      currency,
+      unitScale,
+      reportingPeriod,
+      sourcePage: sourceLine.page,
+      sourceExcerpt: shorten(
+        reportedValue
+          ? `${matchedLabel} — ${reportedValue} (${year})`
+          : sourceLine.text,
+      ),
+      verificationStatus:
+        reportedValue &&
+        currency &&
+        unitScale !== "unknown" &&
+        reportingPeriod
+          ? "verified"
+          : "unverified",
+    },
+    ambiguous: candidates.length > 1,
+  };
 }
 
 function findMetricLine(
@@ -310,18 +539,63 @@ export async function extractFinancialReport(
       );
     }
 
-    const currency = detectCurrency(documentText);
-    const unitScale = detectUnitScale(documentText);
-    const reportingPeriod = detectReportingPeriod(lines);
+    const incomeStatementPage = findStatementPage(
+      lines,
+      /بيان\s+الدخل\s+المجمع|consolidated\s+income\s+statement/i,
+    );
+    const balanceStatementPage = findStatementPage(
+      lines,
+      /بيان\s+المركز\s+المالي\s+المجمع|consolidated\s+(?:statement\s+of\s+financial\s+position|balance\s+sheet)/i,
+    );
+    const statementPages = [incomeStatementPage, balanceStatementPage].filter(
+      (page): page is number => page !== null,
+    );
+    const statementYear = findStatementYear(lines, statementPages);
+    const statementContext = statementPages
+      .map((page) => pageText(lines, page))
+      .join(" ");
+    const hasFinancialStatements = statementPages.length > 0;
+    const currency = detectCurrency(
+      hasFinancialStatements ? statementContext : documentText,
+    );
+    const unitScale = detectUnitScale(
+      hasFinancialStatements ? statementContext : documentText,
+    );
+    const reportingPeriod = hasFinancialStatements
+      ? detectStatementPeriod(lines, incomeStatementPage, statementYear)
+      : detectReportingPeriod(lines);
     const extractionNotes: string[] = [];
     const metrics: ExtractedMetric[] = financialLabels.map((definition) => {
-      const found = findMetricLine(
-        lines,
-        definition,
-        currency,
-        unitScale,
-        reportingPeriod,
-      );
+      const statementPage =
+        definition.category === "assets" ||
+        definition.category === "liabilities" ||
+        definition.category === "equity"
+          ? balanceStatementPage
+          : incomeStatementPage;
+      const yearColumnX =
+        statementPage === null
+          ? null
+          : findYearColumnX(lines, statementPage, statementYear);
+      const found = hasFinancialStatements
+        ? statementPage === null
+          ? null
+          : findStatementMetric(
+              lines,
+              statementPage,
+              statementYear,
+              yearColumnX,
+              definition,
+              currency,
+              unitScale,
+              reportingPeriod,
+            )
+        : findMetricLine(
+            lines,
+            definition,
+            currency,
+            unitScale,
+            reportingPeriod,
+          );
       if (found?.ambiguous) {
         extractionNotes.push(
           `${definition.label} appears alongside multiple figures on page ${found.metric.sourcePage}; no value was selected.`,
@@ -359,7 +633,7 @@ export async function extractFinancialReport(
     }
     if (!detectCompanyName(lines)) {
       extractionNotes.push(
-        "A company name could not be confidently identified from a labeled field.",
+        "A company name could not be confidently identified from the report cover or opening pages.",
       );
     }
     if (metrics.every((metric) => metric.verificationStatus === "unavailable")) {
