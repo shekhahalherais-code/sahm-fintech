@@ -14,6 +14,7 @@ const words = {
     notes: 'Extraction notes', noNotes: 'No additional extraction notes were supplied.',
     disclaimer: 'SAHM displays information extracted from the uploaded document. Always check the cited source and original filing before making a financial decision.',
     loading: 'Retrieving your saved extraction…', failed: 'We couldn’t load this report', failedSub: 'The report may have moved or the saved link may be incomplete.',
+    databaseUnavailable: 'MongoDB Atlas could not be reached. Check the cluster and its Network Access IP list.',
     retry: 'Try again', notFound: 'This report could not be found.', count: 'FIGURES TO REVIEW',
     units: 'Units', thousands: 'Thousands', millions: 'Millions', unknown: 'Unknown',
     metricLabels: { revenue: 'Revenue', net_profit: 'Net profit', assets: 'Total assets', liabilities: 'Total liabilities', equity: 'Total equity', other: 'Other' },
@@ -29,6 +30,7 @@ const words = {
     notes: 'ملاحظات الاستخراج', noNotes: 'لا توجد ملاحظات إضافية للاستخراج.',
     disclaimer: 'يعرض سهم المعلومات المستخرجة من المستند المرفوع. راجع المصدر المذكور والإفصاح الأصلي دائماً قبل اتخاذ أي قرار مالي.',
     loading: 'جارٍ استرجاع الاستخراج المحفوظ…', failed: 'تعذّر تحميل هذا التقرير', failedSub: 'ربما انتقل التقرير أو أن الرابط المحفوظ غير مكتمل.',
+    databaseUnavailable: 'تعذّر الوصول إلى MongoDB Atlas. تحقق من العنقود وقائمة عناوين IP في Network Access.',
     retry: 'حاول مرة أخرى', notFound: 'لم يتم العثور على هذا التقرير.', count: 'أرقام للمراجعة',
     units: 'وحدات', thousands: 'آلاف', millions: 'ملايين', unknown: 'غير معروف',
     metricLabels: { revenue: 'الإيرادات', net_profit: 'صافي الربح', assets: 'إجمالي الأصول', liabilities: 'إجمالي الالتزامات', equity: 'إجمالي حقوق الملكية', other: 'أخرى' },
@@ -80,7 +82,7 @@ export default function ReportReviewPage() {
   if (query.isError || !query.data) return <main className="error-page" dir={language === 'ar' ? 'rtl' : 'ltr'}>
     <section className="error-card">
       <div className="error-icon"><AlertCircle size={20} /></div><h2>{t.failed}</h2>
-      <p>{query.isError ? t.failedSub : t.notFound}</p>
+      <p>{query.isError ? (query.error instanceof Error && query.error.message.includes('HTTP 503') ? t.databaseUnavailable : t.failedSub) : t.notFound}</p>
       {query.isError && <button className="retry-button" type="button" onClick={() => query.refetch()} data-testid="button-retry-report">{t.retry}</button>}
       <div><Link href="/" className="back-link" style={{ marginTop: 20, marginBottom: 0 }} data-testid="link-back-home"><ArrowLeft size={14} />{t.back}</Link></div>
     </section>

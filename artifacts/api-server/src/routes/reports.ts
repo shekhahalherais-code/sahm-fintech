@@ -111,7 +111,7 @@ router.post(
       req.log.error({ err: error }, "Could not save extracted financial report");
       res.status(503).json({
         error:
-          "The report was read, but could not be saved. Check the MongoDB Atlas connection and try again.",
+          "The report was read, but could not be saved. Check that the MongoDB Atlas cluster is running and that its Network Access list allows this runtime.",
       });
     }
   },
@@ -153,7 +153,7 @@ router.get(
       }
       req.log.error({ err: error }, "Could not retrieve financial report");
       res.status(503).json({
-        error: "Saved reports are temporarily unavailable. Check the MongoDB connection.",
+        error: "Saved reports are temporarily unavailable. Check that the MongoDB Atlas cluster is running and that its Network Access list allows this runtime.",
       });
     }
   },

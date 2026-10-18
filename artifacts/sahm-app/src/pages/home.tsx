@@ -19,6 +19,7 @@ const copy = {
     footerRight: 'Made for learners in Kuwait', select: 'Please choose a PDF file.', type: 'This file is not a PDF. Choose a .pdf file.',
     size: 'The PDF exceeds the 15 MB limit. Choose a smaller file.', fail: 'We couldn’t extract this report. Please check that it is a text-based PDF and try again.',
     database: 'The report was read, but MongoDB Atlas must be connected before it can be saved. Add the MONGODB_URI secret and try again.',
+    databaseUnavailable: 'The report was read, but Atlas could not be reached. Check that the cluster is running and that its Network Access list allows this Replit runtime.',
   },
   ar: {
     header: 'خطوة أوضح نحو الاستثمار',
@@ -35,6 +36,7 @@ const copy = {
     footerRight: 'للمتعلمين في الكويت', select: 'يرجى اختيار ملف PDF.', type: 'هذا الملف ليس بصيغة PDF. اختر ملفاً بامتداد .pdf.',
     size: 'حجم الملف يتجاوز ١٥ ميغابايت. اختر ملفاً أصغر.', fail: 'تعذّر استخراج التقرير. تأكد من أنه PDF نصي ثم حاول مرة أخرى.',
     database: 'تمت قراءة التقرير، لكن يجب ربط MongoDB Atlas لحفظه. أضف السر MONGODB_URI ثم حاول مرة أخرى.',
+    databaseUnavailable: 'تمت قراءة التقرير، لكن تعذّر الوصول إلى Atlas. تحقق من تشغيل العنقود والسماح لبيئة Replit الحالية ضمن قائمة Network Access.',
   },
 };
 
@@ -75,7 +77,10 @@ export default function HomePage() {
     setError('');
     extract.mutate({ data: { file } }, {
       onSuccess: report => navigate(`/reports/${encodeURIComponent(report.id)}`),
-      onError: error => setError(error.status === 503 ? t.database : t.fail),
+      onError: error => {
+        if (error.status !== 503) { setError(t.fail); return; }
+        setError(error.message.includes('MONGODB_URI') ? t.database : t.databaseUnavailable);
+      },
     });
   }
 
