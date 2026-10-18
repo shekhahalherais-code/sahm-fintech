@@ -75,6 +75,37 @@ export const FinancialReportUnitScale = {
   unknown: 'unknown',
 } as const;
 
+export type BilingualExplanationItemCategory = typeof BilingualExplanationItemCategory[keyof typeof BilingualExplanationItemCategory];
+
+
+export const BilingualExplanationItemCategory = {
+  revenue: 'revenue',
+  net_profit: 'net_profit',
+  assets: 'assets',
+  liabilities: 'liabilities',
+  equity: 'equity',
+  other: 'other',
+} as const;
+
+export interface BilingualExplanationItem {
+  /** @minimum 0 */
+  metricIndex: number;
+  category: BilingualExplanationItemCategory;
+  meaningEnglish: string;
+  meaningArabic: string;
+  contextEnglish: string;
+  contextArabic: string;
+  /** @nullable */
+  sourcePage: number | null;
+}
+
+export interface BilingualExplanationBundle {
+  summaryEnglish: string;
+  summaryArabic: string;
+  items: BilingualExplanationItem[];
+  generatedAt: string;
+}
+
 export interface FinancialReport {
   id: string;
   originalFileName: string;
@@ -87,6 +118,7 @@ export interface FinancialReport {
   unitScale: FinancialReportUnitScale;
   metrics: FinancialMetric[];
   extractionNotes: string[];
+  explanations: BilingualExplanationBundle | null;
   createdAt: string;
 }
 

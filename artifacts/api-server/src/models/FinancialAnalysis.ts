@@ -27,6 +27,33 @@ const financialMetricSchema = new Schema(
   { _id: false },
 );
 
+const explanationItemSchema = new Schema(
+  {
+    metricIndex: { type: Number, required: true, min: 0 },
+    category: {
+      type: String,
+      enum: ["revenue", "net_profit", "assets", "liabilities", "equity", "other"],
+      required: true,
+    },
+    meaningEnglish: { type: String, required: true, maxlength: 500 },
+    meaningArabic: { type: String, required: true, maxlength: 500 },
+    contextEnglish: { type: String, required: true, maxlength: 500 },
+    contextArabic: { type: String, required: true, maxlength: 500 },
+    sourcePage: { type: Number, default: null },
+  },
+  { _id: false },
+);
+
+const explanationBundleSchema = new Schema(
+  {
+    summaryEnglish: { type: String, required: true, maxlength: 800 },
+    summaryArabic: { type: String, required: true, maxlength: 800 },
+    items: { type: [explanationItemSchema], required: true },
+    generatedAt: { type: String, required: true },
+  },
+  { _id: false },
+);
+
 const financialAnalysisSchema = new Schema(
   {
     originalFileName: { type: String, required: true },
@@ -40,6 +67,7 @@ const financialAnalysisSchema = new Schema(
     },
     metrics: { type: [financialMetricSchema], required: true },
     extractionNotes: { type: [String], default: [] },
+    explanations: { type: explanationBundleSchema, default: null },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

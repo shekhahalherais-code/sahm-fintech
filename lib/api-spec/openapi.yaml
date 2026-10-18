@@ -86,6 +86,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /reports/{reportId}/explanations:
+    post:
+      operationId: generateReportExplanations
+      tags: [reports]
+      summary: Generate or retrieve bilingual, source-grounded explanations for a saved report
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bilingual explanations generated from verified report evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BilingualExplanationBundle"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Explanation service is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -149,6 +179,7 @@ components:
         - unitScale
         - metrics
         - extractionNotes
+        - explanations
         - createdAt
       properties:
         id:
@@ -172,7 +203,53 @@ components:
           type: array
           items:
             type: string
+        explanations:
+          oneOf:
+            - $ref: "#/components/schemas/BilingualExplanationBundle"
+            - type: "null"
         createdAt:
+          type: string
+          format: date-time
+    BilingualExplanationItem:
+      type: object
+      required:
+        - metricIndex
+        - category
+        - meaningEnglish
+        - meaningArabic
+        - contextEnglish
+        - contextArabic
+        - sourcePage
+      properties:
+        metricIndex:
+          type: integer
+          minimum: 0
+        category:
+          type: string
+          enum: [revenue, net_profit, assets, liabilities, equity, other]
+        meaningEnglish:
+          type: string
+        meaningArabic:
+          type: string
+        contextEnglish:
+          type: string
+        contextArabic:
+          type: string
+        sourcePage:
+          type: ["integer", "null"]
+    BilingualExplanationBundle:
+      type: object
+      required: [summaryEnglish, summaryArabic, items, generatedAt]
+      properties:
+        summaryEnglish:
+          type: string
+        summaryArabic:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BilingualExplanationItem"
+        generatedAt:
           type: string
           format: date-time
     ErrorResponse:

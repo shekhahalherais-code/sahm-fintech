@@ -24,6 +24,10 @@ export const ExtractReportBody = zod.object({
   "file": zod.instanceof(Blob).describe('Text-based PDF financial report, up to 15 MB')
 })
 
+export const extractReportResponseExplanationsOneItemsItemMetricIndexMin = 0;
+
+
+
 export const ExtractReportResponse = zod.object({
   "id": zod.string(),
   "originalFileName": zod.string(),
@@ -43,6 +47,20 @@ export const ExtractReportResponse = zod.object({
   "verificationStatus": zod.enum(['verified', 'unverified', 'unavailable'])
 })),
   "extractionNotes": zod.array(zod.string()),
+  "explanations": zod.union([zod.object({
+  "summaryEnglish": zod.string(),
+  "summaryArabic": zod.string(),
+  "items": zod.array(zod.object({
+  "metricIndex": zod.number().int().min(extractReportResponseExplanationsOneItemsItemMetricIndexMin),
+  "category": zod.enum(['revenue', 'net_profit', 'assets', 'liabilities', 'equity', 'other']),
+  "meaningEnglish": zod.string(),
+  "meaningArabic": zod.string(),
+  "contextEnglish": zod.string(),
+  "contextArabic": zod.string(),
+  "sourcePage": zod.number().int().nullable()
+})),
+  "generatedAt": zod.coerce.date()
+}),zod.null()]),
   "createdAt": zod.coerce.date()
 })
 
@@ -53,6 +71,10 @@ export const ExtractReportResponse = zod.object({
 export const GetFinancialReportParams = zod.object({
   "reportId": zod.coerce.string()
 })
+
+export const getFinancialReportResponseExplanationsOneItemsItemMetricIndexMin = 0;
+
+
 
 export const GetFinancialReportResponse = zod.object({
   "id": zod.string(),
@@ -73,7 +95,48 @@ export const GetFinancialReportResponse = zod.object({
   "verificationStatus": zod.enum(['verified', 'unverified', 'unavailable'])
 })),
   "extractionNotes": zod.array(zod.string()),
+  "explanations": zod.union([zod.object({
+  "summaryEnglish": zod.string(),
+  "summaryArabic": zod.string(),
+  "items": zod.array(zod.object({
+  "metricIndex": zod.number().int().min(getFinancialReportResponseExplanationsOneItemsItemMetricIndexMin),
+  "category": zod.enum(['revenue', 'net_profit', 'assets', 'liabilities', 'equity', 'other']),
+  "meaningEnglish": zod.string(),
+  "meaningArabic": zod.string(),
+  "contextEnglish": zod.string(),
+  "contextArabic": zod.string(),
+  "sourcePage": zod.number().int().nullable()
+})),
+  "generatedAt": zod.coerce.date()
+}),zod.null()]),
   "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Generate or retrieve bilingual, source-grounded explanations for a saved report
+ */
+export const GenerateReportExplanationsParams = zod.object({
+  "reportId": zod.coerce.string()
+})
+
+export const generateReportExplanationsResponseItemsItemMetricIndexMin = 0;
+
+
+
+export const GenerateReportExplanationsResponse = zod.object({
+  "summaryEnglish": zod.string(),
+  "summaryArabic": zod.string(),
+  "items": zod.array(zod.object({
+  "metricIndex": zod.number().int().min(generateReportExplanationsResponseItemsItemMetricIndexMin),
+  "category": zod.enum(['revenue', 'net_profit', 'assets', 'liabilities', 'equity', 'other']),
+  "meaningEnglish": zod.string(),
+  "meaningArabic": zod.string(),
+  "contextEnglish": zod.string(),
+  "contextArabic": zod.string(),
+  "sourcePage": zod.number().int().nullable()
+})),
+  "generatedAt": zod.coerce.date()
 })
 
 

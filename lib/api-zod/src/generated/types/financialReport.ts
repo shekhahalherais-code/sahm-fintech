@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { BilingualExplanationBundle } from './bilingualExplanationBundle';
 import type { FinancialMetric } from './financialMetric';
 import type { FinancialReportUnitScale } from './financialReportUnitScale';
 
@@ -20,5 +21,6 @@ export interface FinancialReport {
   unitScale: FinancialReportUnitScale;
   metrics: FinancialMetric[];
   extractionNotes: string[];
+  explanations: BilingualExplanationBundle | null;
   createdAt: Date;
 }

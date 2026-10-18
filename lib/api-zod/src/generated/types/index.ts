@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './bilingualExplanationBundle';
+export * from './bilingualExplanationItem';
+export * from './bilingualExplanationItemCategory';
 export * from './errorResponse';
 export * from './financialMetric';
 export * from './financialMetricCategory';

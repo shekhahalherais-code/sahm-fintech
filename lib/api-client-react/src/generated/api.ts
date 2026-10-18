@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BilingualExplanationBundle,
   ErrorResponse,
   FinancialReport,
   HealthStatus,
@@ -283,4 +284,78 @@ export function useGetFinancialReport<TData = Awaited<ReturnType<typeof getFinan
 
 
 
+
+export const getGenerateReportExplanationsUrl = (reportId: string,) => {
+
+
+
+
+  return `/api/reports/${reportId}/explanations`
+}
+
+/**
+ * @summary Generate or retrieve bilingual, source-grounded explanations for a saved report
+ */
+export const generateReportExplanations = async (reportId: string, options?: Parameters<typeof customFetch>[1]): Promise<BilingualExplanationBundle> => {
+
+  return customFetch<BilingualExplanationBundle>(getGenerateReportExplanationsUrl(reportId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getGenerateReportExplanationsMutationKey = () => ['generateReportExplanations'] as const;
+
+export const getGenerateReportExplanationsMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateReportExplanations>>, TError,GenerateReportExplanationsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateReportExplanations>>, TError,GenerateReportExplanationsMutationVariables, TContext> => {
+
+const mutationKey = getGenerateReportExplanationsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateReportExplanations>>, GenerateReportExplanationsMutationVariables> = (props) => {
+          const {reportId} = props ?? {};
+
+          return  generateReportExplanations(reportId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateReportExplanationsMutationResult = NonNullable<Awaited<ReturnType<typeof generateReportExplanations>>>
+
+    export type GenerateReportExplanationsMutationError = ErrorType<ErrorResponse>
+    export type GenerateReportExplanationsMutationVariables = {reportId: string}
+
+    /**
+ * @summary Generate or retrieve bilingual, source-grounded explanations for a saved report
+ */
+export const useGenerateReportExplanations = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateReportExplanations>>, TError,GenerateReportExplanationsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateReportExplanations>>,
+        TError,
+        GenerateReportExplanationsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGenerateReportExplanationsMutationOptions(options));
+    }
 

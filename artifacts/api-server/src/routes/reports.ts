@@ -2,12 +2,15 @@ import { Router, type IRouter, type NextFunction, type Request, type Response } 
 import multer from "multer";
 import mongoose from "mongoose";
 import {
+  GenerateReportExplanationsParams,
+  GenerateReportExplanationsResponse,
   ExtractReportResponse,
   GetFinancialReportParams,
   GetFinancialReportResponse,
 } from "@workspace/api-zod";
 import { FinancialAnalysis } from "../models/FinancialAnalysis";
 import { extractFinancialReport } from "../services/financial-extractor";
+import { createBilingualFinancialExplanations } from "../services/financial-explainer";
 import { connectMongo, MongoConfigurationError } from "../services/mongodb";
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -100,6 +103,7 @@ router.post(
         unitScale: saved.unitScale,
         metrics: saved.metrics,
         extractionNotes: saved.extractionNotes,
+        explanations: saved.explanations ?? null,
         createdAt: saved.createdAt,
       });
       res.status(201).json(response);
@@ -143,6 +147,7 @@ router.get(
         unitScale: saved.unitScale,
         metrics: saved.metrics,
         extractionNotes: saved.extractionNotes,
+        explanations: saved.explanations ?? null,
         createdAt: saved.createdAt,
       });
       res.json(response);
@@ -154,6 +159,49 @@ router.get(
       req.log.error({ err: error }, "Could not retrieve financial report");
       res.status(503).json({
         error: "Saved reports are temporarily unavailable. Check that the MongoDB Atlas cluster is running and that its Network Access list allows this runtime.",
+      });
+    }
+  },
+);
+
+router.post(
+  "/reports/:reportId/explanations",
+  async (req, res): Promise<void> => {
+    const parsedParams = GenerateReportExplanationsParams.safeParse(req.params);
+    if (!parsedParams.success || !mongoose.isValidObjectId(parsedParams.data.reportId)) {
+      res.status(404).json({ error: "Saved report not found." });
+      return;
+    }
+
+    try {
+      await connectMongo();
+      const saved = await FinancialAnalysis.findById(parsedParams.data.reportId);
+      if (!saved) {
+        res.status(404).json({ error: "Saved report not found." });
+        return;
+      }
+
+      if (saved.explanations) {
+        res.json(GenerateReportExplanationsResponse.parse(saved.explanations));
+        return;
+      }
+
+      const generated = await createBilingualFinancialExplanations(saved.metrics);
+      const validated = GenerateReportExplanationsResponse.parse(generated);
+      saved.explanations = validated;
+      await saved.save();
+      res.json(validated);
+    } catch (error) {
+      if (error instanceof MongoConfigurationError) {
+        res.status(503).json({ error: error.message });
+        return;
+      }
+      req.log.error(
+        { reportId: parsedParams.data.reportId },
+        "Could not generate bilingual financial explanations",
+      );
+      res.status(503).json({
+        error: "The explanation service is temporarily unavailable. Please try again.",
       });
     }
   },

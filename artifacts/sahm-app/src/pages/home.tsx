@@ -45,9 +45,11 @@ function formatSize(size: number) {
 }
 
 export default function HomePage() {
-  const [language, setLanguage] = useState<'en' | 'ar'>(() =>
-    typeof window !== 'undefined' && window.localStorage.getItem('sahm-language') === 'ar' ? 'ar' : 'en',
-  );
+  const [language, setLanguage] = useState<'en' | 'ar'>(() => {
+    if (typeof window === 'undefined') return 'ar';
+    const savedLanguage = window.localStorage.getItem('sahm-language');
+    return savedLanguage === 'en' || savedLanguage === 'ar' ? savedLanguage : 'ar';
+  });
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
@@ -85,7 +87,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="app-shell" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <main className="app-shell" dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
       <header className="topbar">
         <a className="brand" href="/" aria-label="SAHM home" data-testid="link-home">
           <span className="brand-mark">س</span><span className="brand-name">SAHM</span><span className="brand-ar">سهم</span>
@@ -105,6 +107,38 @@ export default function HomePage() {
           <p className="hero-sub">{t.sub}</p>
           <div className="promise-row">
             {t.proof.map(item => <span className="promise" key={item}><span className="promise-dot" />{item}</span>)}
+          </div>
+          <div className="hero-visual" aria-hidden="true">
+            <svg className="kuwait-art" viewBox="0 0 620 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M23 207C120 185 185 214 274 194C367 173 468 185 597 153V280H23V207Z" fill="#E3ECE3" />
+              <path d="M24 231C134 212 209 236 316 211C421 187 514 205 598 182" stroke="#A9C8B4" strokeWidth="2" />
+              <path d="M23 246C142 226 217 250 319 229C422 208 513 220 598 202" stroke="#C2D8C8" strokeWidth="1.5" />
+              <circle cx="471" cy="76" r="43" fill="#D7E7D9" />
+              <path d="M78 218L100 128L121 218H78Z" fill="#527C68" />
+              <path d="M83 195H116M87 177H112M91 159H108" stroke="#B8D5C2" strokeWidth="3" />
+              <path d="M135 217L159 102L184 217H135Z" fill="#275746" />
+              <path d="M141 191H178M145 169H174M149 147H169M153 125H165" stroke="#B8D5C2" strokeWidth="3" />
+              <path d="M191 217L211 146L232 217H191Z" fill="#6C927D" />
+              <path d="M196 195H227M201 177H222M206 159H217" stroke="#D3E2D4" strokeWidth="3" />
+              <path d="M270 219V119C270 108 279 99 290 99C301 99 310 108 310 119V219H270Z" fill="#194536" />
+              <circle cx="290" cy="94" r="18" fill="#76A58B" />
+              <circle cx="290" cy="94" r="7" fill="#D8E8D8" />
+              <path d="M281 110L287 219M299 110L293 219" stroke="#BBD5C2" strokeWidth="2" />
+              <path d="M330 219V84C330 74 338 66 348 66C358 66 366 74 366 84V219H330Z" fill="#285B49" />
+              <circle cx="348" cy="59" r="24" fill="#6D9C81" />
+              <circle cx="348" cy="59" r="10" fill="#D9E8D9" />
+              <path d="M341 83L345 219M355 83L351 219" stroke="#C2D9C7" strokeWidth="2" />
+              <path d="M385 218V132C385 123 393 116 402 116C411 116 419 123 419 132V218H385Z" fill="#527C68" />
+              <circle cx="402" cy="110" r="16" fill="#8EB49A" />
+              <circle cx="402" cy="110" r="6" fill="#E2ECE0" />
+              <path d="M396 127L399 218M408 127L405 218" stroke="#D4E2D4" strokeWidth="2" />
+              <path d="M257 221H429" stroke="#163E32" strokeWidth="5" strokeLinecap="round" />
+              <path d="M51 221H583" stroke="#315E4A" strokeWidth="2" strokeLinecap="round" />
+              <path d="M448 223C480 211 515 213 555 223" stroke="#7FA88D" strokeWidth="2" strokeLinecap="round" />
+              <path d="M487 236C509 230 533 231 559 236" stroke="#A9C8B4" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <div className="visual-note"><span className="visual-note-mark"><FileText size={15} /></span><span><strong>{language === 'ar' ? 'ابدأ من التقرير' : 'Start with the report'}</strong><small>{language === 'ar' ? 'المصدر قبل أي قراءة' : 'Source before interpretation'}</small></span></div>
+            <span className="visual-caption">{language === 'ar' ? 'الكويت · فهم يبدأ من المصدر' : 'Kuwait · understanding starts at the source'}</span>
           </div>
         </div>
 
