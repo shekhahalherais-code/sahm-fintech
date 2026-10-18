@@ -167,7 +167,7 @@ export default function ReportReviewPage() {
         </nav>
         <div className="rail-bottom">
           <div className="rail-note"><span className="rail-note-mark"><FileText size={15} /></span><span><b>{t.filename}</b><small>{report.originalFileName}</small></span></div>
-          <Link href="/" className="rail-back" data-testid="link-back-home"><ArrowLeft size={15} />{t.back}</Link>
+          <Link href="/" className="rail-back" aria-label={t.back} data-testid="link-back-home"><ArrowLeft size={15} />{t.back}</Link>
         </div>
       </aside>
       <div className="dashboard-main">
@@ -200,11 +200,26 @@ export default function ReportReviewPage() {
         <section className="summary-grid" aria-label={t.summaryLabel}>
           {summaryCategories.map((category, index) => {
             const metric = metricsByCategory.get(category);
-            return <article className={`summary-card summary-card-${index + 1}`} key={category} data-testid={`summary-${category}`}>
+            const cardContent = <>
               <div className="summary-card-top"><span className="summary-card-label">{t.metricLabels[category]}</span><span className="summary-card-icon"><ChartNoAxesCombined size={15} /></span></div>
-              <strong className="summary-card-value">{metric?.reportedValue ? metric.reportedValue : <span className="unavailable">{t.unavailable}</span>}</strong>
-              <div className="summary-card-foot">{metric ? <>{metric.currency || t.unavailable}{metric.unitScale !== 'unknown' ? ` · ${t[metric.unitScale]}` : ''} <span className={`status-pip status-${metric.verificationStatus}`} />{metric.verificationStatus === 'verified' ? t.verified : metric.verificationStatus === 'unverified' ? t.unverified : t.missing}</> : t.unavailable}</div>
-            </article>;
+              <strong className="summary-card-value">{unavailable(metric?.reportedValue, t.unavailable)}</strong>
+              <div className="summary-card-foot" data-testid={`summary-details-${category}`}>
+                {metric ? <>
+                  <span>{[metric.currency || t.unavailable, metric.unitScale !== 'unknown' ? t[metric.unitScale] : t.unknown].join(' · ')}</span>
+                  <span>{metric.reportingPeriod || t.unavailable}</span>
+                  <span>{t.page} {metric.sourcePage ?? t.unavailable}</span>
+                  <span className={`status-pip status-${metric.verificationStatus}`} />
+                  <span>{metric.verificationStatus === 'verified' ? t.verified : metric.verificationStatus === 'unverified' ? t.unverified : t.missing}</span>
+                </> : <span className="unavailable">{t.unavailable}</span>}
+              </div>
+            </>;
+            return metric ? <Link
+              className={`summary-card summary-card-${index + 1} summary-card-link`}
+              key={category}
+              href={`/reports/${encodeURIComponent(reportId)}/explanations?metric=${report.metrics.indexOf(metric)}`}
+              data-testid={`summary-${category}`}
+              aria-label={`${t.metricLabels[category]} · ${t.explanations}`}
+            >{cardContent}</Link> : <article className={`summary-card summary-card-${index + 1}`} key={category} data-testid={`summary-${category}`}>{cardContent}</article>;
           })}
         </section>
 

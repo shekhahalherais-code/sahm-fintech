@@ -12,11 +12,16 @@ import { Brand } from '@/components/brand';
 const copy = {
   en: {
     overline: 'PLAIN-LANGUAGE GUIDE', title: 'Understand the report figures',
-    subtitle: 'Each note is based on a figure extracted from this filing. Open the cited page to check the original context.',
+    subtitle: 'A careful reading of saved figures and explanations, grounded in the original report.',
     report: 'Report', back: 'Back to dashboard', home: 'SAHM home', switch: 'العربية', print: 'Download summary',
-    summary: 'The short version', figures: 'What the figures mean', source: 'Source evidence',
-    page: 'Page', noExcerpt: 'No source excerpt was available for this figure.',
-    value: 'Reported value', meaning: 'In plain language', context: 'In this report',
+    summary: 'The short version', figures: 'Choose a figure', source: 'Reference in the original report',
+    page: 'Page', noExcerpt: 'No source excerpt is available for this figure.',
+    value: 'Reported value', meaning: 'What this figure means', context: 'For a beginner investor',
+    period: 'Reporting period', currency: 'Currency', unit: 'Unit scale',
+    unavailable: 'Unavailable in report', unitScales: { units: 'Units', thousands: 'Thousands', millions: 'Millions', unknown: 'Unknown' },
+    meaningUnavailable: 'No saved plain-language meaning is available for this figure.',
+    contextUnavailable: 'No saved investor context is available for this figure.',
+    summaryUnavailable: 'No saved report summary is available.',
     metricLabels: { revenue: 'Revenue', net_profit: 'Net profit', assets: 'Total assets', liabilities: 'Total liabilities', equity: 'Total equity', other: 'Other' },
     generate: 'Prepare plain-language guide', generating: 'Preparing your guide…',
     notReady: 'No explanation has been saved for this report yet.',
@@ -25,15 +30,22 @@ const copy = {
     retry: 'Try again', missing: 'This report could not be found.',
     generateError: 'We couldn’t prepare the guide. Please try again.',
     disclaimer: 'For learning only. SAHM reproduces information from the uploaded report and does not provide investment advice.',
-    noItems: 'No figure-specific notes were returned for this report.',
+    noItems: 'No figure-specific notes were saved for this report.',
+    noMetrics: 'No figures were extracted from this report.',
+    verified: 'Verified', unverified: 'Unverified', statusUnavailable: 'Unavailable',
   },
   ar: {
     overline: 'قراءة مبسطة', title: 'افهم أرقام التقرير',
-    subtitle: 'يستند كل شرح إلى رقم مستخرج من هذا الإفصاح. افتح الصفحة المذكورة للتحقق من سياق المصدر الأصلي.',
+    subtitle: 'قراءة دقيقة للأرقام والشروحات المحفوظة، بالاستناد إلى التقرير الأصلي.',
     report: 'التقرير', back: 'العودة إلى لوحة التقرير', home: 'الصفحة الرئيسية لسهم', switch: 'English', print: 'تنزيل الملخص',
-    summary: 'ملخص سريع', figures: 'ماذا تعني الأرقام', source: 'دليل المصدر',
+    summary: 'ملخص سريع', figures: 'اختر رقماً', source: 'مرجع الرقم في التقرير الأصلي',
     page: 'الصفحة', noExcerpt: 'لا يتوفر مقتطف من المصدر لهذا الرقم.',
-    value: 'القيمة المنشورة', meaning: 'بشرح مبسط', context: 'في هذا التقرير',
+    value: 'القيمة المنشورة', meaning: 'ما هو هذا الرقم؟', context: 'ماذا يعني للمستثمر المبتدئ؟',
+    period: 'الفترة المالية', currency: 'العملة', unit: 'مقياس الوحدة',
+    unavailable: 'غير متوفر في التقرير', unitScales: { units: 'وحدات', thousands: 'آلاف', millions: 'ملايين', unknown: 'غير معروف' },
+    meaningUnavailable: 'لا يتوفر شرح مبسط محفوظ لهذا الرقم.',
+    contextUnavailable: 'لا يتوفر سياق محفوظ للمستثمر لهذا الرقم.',
+    summaryUnavailable: 'لا يتوفر ملخص محفوظ للتقرير.',
     metricLabels: { revenue: 'الإيرادات', net_profit: 'صافي الربح', assets: 'إجمالي الأصول', liabilities: 'إجمالي الالتزامات', equity: 'إجمالي حقوق الملكية', other: 'أخرى' },
     generate: 'إعداد قراءة مبسطة', generating: 'جارٍ إعداد القراءة…',
     notReady: 'لم يُحفظ شرح لهذا التقرير حتى الآن.',
@@ -42,14 +54,26 @@ const copy = {
     retry: 'حاول مرة أخرى', missing: 'لم يتم العثور على هذا التقرير.',
     generateError: 'تعذّر إعداد القراءة المبسطة. حاول مرة أخرى.',
     disclaimer: 'للتثقيف فقط. يعرض سهم معلومات من التقرير المرفوع ولا يقدم نصيحة استثمارية.',
-    noItems: 'لم يتم إرجاع شروحات خاصة بالأرقام في هذا التقرير.',
+    noItems: 'لا توجد شروحات محفوظة خاصة بأرقام هذا التقرير.',
+    noMetrics: 'لم يتم استخراج أرقام من هذا التقرير.',
+    verified: 'تم التحقق', unverified: 'غير متحقق', statusUnavailable: 'غير متاح',
   },
 };
+
+function unavailable(value: string | null | undefined, empty: string) {
+  return value ? value : empty;
+}
 
 export default function ReportExplanationsPage() {
   const [language, setLanguage] = useState<'en' | 'ar'>(() =>
     typeof window !== 'undefined' && window.localStorage.getItem('sahm-language') === 'en' ? 'en' : 'ar',
   );
+  const [requestedMetricIndex, setRequestedMetricIndex] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const value = new URLSearchParams(window.location.search).get('metric');
+    if (value === null || !/^\d+$/.test(value)) return null;
+    return Number(value);
+  });
   const params = useParams<{ reportId: string }>();
   const reportId = params.reportId || '';
   const queryClient = useQueryClient();
@@ -88,20 +112,27 @@ export default function ReportExplanationsPage() {
 
   const report = query.data;
   const bundle = report.explanations;
+  const selectedIndex = requestedMetricIndex !== null && requestedMetricIndex >= 0 && requestedMetricIndex < report.metrics.length
+    ? requestedMetricIndex
+    : 0;
+  const metric = report.metrics[selectedIndex];
+  const item = bundle?.items.find((explanation) => explanation.metricIndex === selectedIndex);
+  const sourcePage = item?.sourcePage ?? metric?.sourcePage ?? null;
+  const metricTitle = metric ? (t.metricLabels[metric.category] ?? metric.label) : '';
+  const statusLabel = metric?.verificationStatus === 'verified' ? t.verified
+    : metric?.verificationStatus === 'unverified' ? t.unverified : t.statusUnavailable;
 
   return <main className="report-dashboard explanation-dashboard" dir={dir} lang={language}>
     <aside className="dashboard-rail">
-      <Link href="/" className="rail-brand" aria-label={t.home} data-testid="link-explanation-home">
-        <Brand variant="rail" />
-      </Link>
+      <Link href="/" className="rail-brand" aria-label={t.home} data-testid="link-explanation-home"><Brand variant="rail" /></Link>
       <div className="rail-caption">{t.report}</div>
       <nav className="rail-nav" aria-label={t.report}>
         <Link href={`/reports/${encodeURIComponent(reportId)}`} className="rail-link" aria-label={t.back} data-testid="link-explanation-dashboard"><ArrowLeft size={17} /><span>{t.back}</span></Link>
-        <span className="rail-link active" aria-current="page"><BookOpen size={17} /><span>{t.overline}</span></span>
+        <span className="rail-link active" aria-label={t.overline} aria-current="page"><BookOpen size={17} /><span>{t.overline}</span></span>
       </nav>
       <div className="rail-bottom">
         <div className="rail-note"><span className="rail-note-mark"><FileText size={15} /></span><span><b>{report.companyName || t.report}</b><small>{report.originalFileName}</small></span></div>
-        <Link href={`/reports/${encodeURIComponent(reportId)}`} className="rail-back" data-testid="link-back-dashboard"><ArrowLeft size={15} />{t.back}</Link>
+        <Link href={`/reports/${encodeURIComponent(reportId)}`} className="rail-back" aria-label={t.back} data-testid="link-back-dashboard"><ArrowLeft size={15} />{t.back}</Link>
       </div>
     </aside>
     <div className="dashboard-main">
@@ -124,41 +155,85 @@ export default function ReportExplanationsPage() {
           <div><span className="snapshot-eyebrow">{t.overline}</span><p>{t.subtitle}</p></div>
         </section>
 
-        {bundle ? <>
-          <section className="report-card explanation-summary-card">
-            <div className="report-card-header"><div><div className="section-title">{t.summary}</div><div className="section-kicker">{report.originalFileName}</div></div><span className="saved-label">{language === 'ar' ? 'من التقرير' : 'REPORT-SPECIFIC'}</span></div>
-            <div className="explanation-summary explanation-summary-page" data-testid="text-explanation-summary">{language === 'ar' ? bundle.summaryArabic : bundle.summaryEnglish}</div>
-          </section>
-          <section className="report-card">
-            <div className="report-card-header"><div><div className="section-title">{t.figures}</div><div className="section-kicker">{report.metrics.length} · {language === 'ar' ? 'أرقام مستخرجة' : 'extracted figures'}</div></div></div>
-            {bundle.items.length ? <div className="explanation-page-list">
-              {bundle.items.map((item, index) => {
-                const metric = report.metrics[item.metricIndex];
-                const metricTitle = metric
-                  ? t.metricLabels[metric.category] ?? metric.label
-                  : t.metricLabels[item.category] ?? item.category;
-                return <article className="explanation-page-item" key={`${item.metricIndex}-${index}`} data-testid={`card-explanation-${index}`}>
-                  <div className="explanation-item-heading"><div><span className="explanation-index">{String(index + 1).padStart(2, '0')}</span><h2>{metricTitle}</h2></div><span className={`status-pill status-${metric?.verificationStatus || 'unavailable'}`}>{metric?.verificationStatus === 'verified' ? (language === 'ar' ? 'تم التحقق' : 'Verified') : metric?.verificationStatus === 'unverified' ? (language === 'ar' ? 'غير متحقق' : 'Unverified') : (language === 'ar' ? 'غير متاح' : 'Unavailable')}</span></div>
-                  {metric && <div className="explanation-reported-value"><span>{t.value}</span><strong>{metric.reportedValue || (language === 'ar' ? 'غير متوفر' : 'Unavailable')}</strong><small>{[metric.currency, metric.unitScale !== 'unknown' ? (language === 'ar' ? ({ units: 'وحدات', thousands: 'آلاف', millions: 'ملايين' }[metric.unitScale] || '') : metric.unitScale) : ''].filter(Boolean).join(' · ') || (language === 'ar' ? 'الوحدات غير محددة' : 'Units unavailable')}</small></div>}
-                  <div className="explanation-copy-grid">
-                    <div><h3>{t.meaning}</h3><p>{language === 'ar' ? item.meaningArabic : item.meaningEnglish}</p></div>
-                    <div><h3>{t.context}</h3><p>{language === 'ar' ? item.contextArabic : item.contextEnglish}</p></div>
-                  </div>
-                  <div className="explanation-source" data-testid={`source-explanation-${index}`}>
-                    <div className="source-top"><span>{t.source}</span><span>{t.page} {item.sourcePage ?? metric?.sourcePage ?? (language === 'ar' ? 'غير متوفر' : 'Unavailable')}</span></div>
-                    <p>{metric?.sourceExcerpt || t.noExcerpt}</p>
-                  </div>
-                </article>;
-              })}
-            </div> : <div className="empty-metrics" data-testid="empty-explanation-items">{t.noItems}</div>}
-          </section>
-        </> : <section className="report-card explanation-prompt">
+        {bundle && <section className="report-card explanation-summary-card">
+          <div className="report-card-header"><div><div className="section-title">{t.summary}</div><div className="section-kicker">{report.originalFileName}</div></div><span className="saved-label">{language === 'ar' ? 'من التقرير' : 'REPORT-SPECIFIC'}</span></div>
+          <div className="explanation-summary explanation-summary-page" data-testid="text-explanation-summary">
+            {unavailable(language === 'ar' ? bundle.summaryArabic : bundle.summaryEnglish, t.summaryUnavailable)}
+          </div>
+        </section>}
+
+        <section className="report-card explanation-selection-card">
+          <div className="report-card-header">
+            <div><div className="section-title">{t.figures}</div><div className="section-kicker">{report.metrics.length} · {language === 'ar' ? 'أرقام مستخرجة' : 'extracted figures'}</div></div>
+          </div>
+          {report.metrics.length ? <>
+            <div className="metric-tabs" role="tablist" aria-label={t.figures} data-testid="tabs-report-metrics">
+              {report.metrics.map((entry, index) => <button
+                type="button"
+                id={`metric-tab-${index}`}
+                role="tab"
+                aria-selected={selectedIndex === index}
+                aria-controls="panel-selected-metric"
+                tabIndex={selectedIndex === index ? 0 : -1}
+                className={`metric-tab${selectedIndex === index ? ' active' : ''}`}
+                key={`${entry.label}-${index}`}
+                onClick={() => setRequestedMetricIndex(index)}
+                onKeyDown={(event) => {
+                  const forwardKey = language === 'ar' ? 'ArrowLeft' : 'ArrowRight';
+                  const backwardKey = language === 'ar' ? 'ArrowRight' : 'ArrowLeft';
+                  let nextIndex: number | null = null;
+                  if (event.key === forwardKey) nextIndex = (index + 1) % report.metrics.length;
+                  else if (event.key === backwardKey) nextIndex = (index - 1 + report.metrics.length) % report.metrics.length;
+                  else if (event.key === 'Home') nextIndex = 0;
+                  else if (event.key === 'End') nextIndex = report.metrics.length - 1;
+                  if (nextIndex !== null) {
+                    event.preventDefault();
+                    setRequestedMetricIndex(nextIndex);
+                    document.getElementById(`metric-tab-${nextIndex}`)?.focus();
+                  }
+                }}
+                data-testid={`tab-metric-${index}`}
+              >{t.metricLabels[entry.category] ?? entry.label}</button>)}
+            </div>
+            {metric && <div className="selected-metric-panel" id="panel-selected-metric" role="tabpanel" aria-labelledby={`metric-tab-${selectedIndex}`} data-testid={`panel-metric-${selectedIndex}`}>
+              <div className="selected-metric-heading">
+                <div>
+                  <div className="selected-metric-title">{metricTitle}</div>
+                  <div className="selected-metric-period">{t.period}: {unavailable(metric.reportingPeriod, t.unavailable)}</div>
+                </div>
+                <span className={`status-pill status-${metric.verificationStatus === 'unavailable' ? 'unavailable' : metric.verificationStatus}`} data-testid={`status-selected-metric-${selectedIndex}`}>{statusLabel}</span>
+              </div>
+              <div className="selected-metric-value" data-testid={`value-selected-metric-${selectedIndex}`}>
+                <span>{t.value}</span>
+                <strong>{unavailable(metric.reportedValue, t.unavailable)}</strong>
+                <div className="selected-metric-meta">
+                  <span>{t.currency}: {unavailable(metric.currency, t.unavailable)}</span>
+                  <span>{t.unit}: {t.unitScales[metric.unitScale] ?? t.unitScales.unknown}</span>
+                  <span>{t.period}: {unavailable(metric.reportingPeriod, t.unavailable)}</span>
+                  <span>{t.page} {sourcePage ?? t.unavailable}</span>
+                </div>
+              </div>
+              <div className="explanation-copy-grid selected-explanation-copy">
+                <div data-testid={`meaning-selected-metric-${selectedIndex}`}><h3>{t.meaning}</h3><p>{unavailable(item ? (language === 'ar' ? item.meaningArabic : item.meaningEnglish) : null, t.meaningUnavailable)}</p></div>
+                <div data-testid={`context-selected-metric-${selectedIndex}`}><h3>{t.context}</h3><p>{unavailable(item ? (language === 'ar' ? item.contextArabic : item.contextEnglish) : null, t.contextUnavailable)}</p></div>
+              </div>
+              <div className="explanation-source selected-source" data-testid={`source-selected-metric-${selectedIndex}`}>
+                <div className="source-top"><span>{t.source}</span><span>{t.page} {sourcePage ?? t.unavailable}</span></div>
+                <p className="source-filename" data-testid="text-source-filename">{report.originalFileName}</p>
+                <p className={`selected-source-excerpt${metric.sourceExcerpt ? '' : ' unavailable'}`} data-testid={`excerpt-selected-metric-${selectedIndex}`}>{unavailable(metric.sourceExcerpt, t.noExcerpt)}</p>
+              </div>
+            </div>}
+          </> : <div className="empty-metrics" data-testid="empty-explanation-metrics">{t.noMetrics}</div>}
+        </section>
+
+        {!bundle && <section className="report-card explanation-prompt">
           <div className="explanation-hero-icon"><Lightbulb size={20} /></div><h2>{t.notReady}</h2>
           <button className="action-button primary" type="button" onClick={generateGuide} disabled={generate.isPending} data-testid="button-generate-explanations">
             {generate.isPending ? t.generating : t.generate}
           </button>
           {generate.isError && <p className="explanation-error" role="alert" data-testid="status-explanation-error">{t.generateError}</p>}
         </section>}
+        {bundle && bundle.items.length === 0 && <div className="empty-metrics" data-testid="empty-explanation-items">{t.noItems}</div>}
         <div className="disclaimer" data-testid="text-explanation-disclaimer">{t.disclaimer}</div>
       </div>
       <footer className="page-footer"><span className="footer-brand">SAHM · سهم</span><span>{report.originalFileName}</span></footer>
