@@ -10,7 +10,13 @@ import {
 } from "@workspace/api-zod";
 import { FinancialAnalysis } from "../models/FinancialAnalysis";
 import { extractFinancialReport } from "../services/financial-extractor";
-import { createBilingualFinancialExplanations } from "../services/financial-explainer";
+import {
+  createBilingualFinancialExplanations,
+  getMissingExplanationIndexes,
+  hasCompleteExplanationBundle,
+  mergeExplanationBundles,
+  type BilingualExplanationBundle,
+} from "../services/financial-explainer";
 import { connectMongo, MongoConfigurationError } from "../services/mongodb";
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -19,6 +25,70 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE, files: 1, fields: 0 },
 });
 const router: IRouter = Router();
+const explanationGenerationJobs = new Map<
+  string,
+  Promise<BilingualExplanationBundle | null>
+>();
+
+function safeExplanationErrorFields(error: unknown): Record<string, string | number> {
+  if (!(error instanceof Error)) return { errorType: typeof error };
+
+  const details = error as Error & { status?: unknown; code?: unknown };
+  const fields: Record<string, string | number> = {
+    errorName: error.name.slice(0, 80),
+  };
+  if (typeof details.status === "number" && Number.isInteger(details.status)) {
+    fields.providerStatus = details.status;
+  }
+  if (
+    typeof details.code === "string" &&
+    /^[A-Za-z0-9_.-]{1,64}$/.test(details.code)
+  ) {
+    fields.errorCode = details.code;
+  }
+  return fields;
+}
+
+function getOrGenerateExplanations(
+  reportId: string,
+): Promise<BilingualExplanationBundle | null> {
+  const currentJob = explanationGenerationJobs.get(reportId);
+  if (currentJob) return currentJob;
+
+  const job = (async (): Promise<BilingualExplanationBundle | null> => {
+    await connectMongo();
+    const saved = await FinancialAnalysis.findById(reportId);
+    if (!saved) return null;
+
+    const existing = saved.explanations as BilingualExplanationBundle | null;
+    if (hasCompleteExplanationBundle(saved.metrics, existing)) {
+      return GenerateReportExplanationsResponse.parse(existing);
+    }
+
+    const missingIndexes = getMissingExplanationIndexes(saved.metrics, existing);
+    const generated = await createBilingualFinancialExplanations(
+      saved.metrics,
+      missingIndexes,
+    );
+    const merged = mergeExplanationBundles(saved.metrics, existing, generated);
+    const validated = GenerateReportExplanationsResponse.parse(merged);
+    saved.explanations = {
+      ...validated,
+      generatedAt: validated.generatedAt.toISOString(),
+    };
+    await saved.save();
+    return validated;
+  })();
+
+  explanationGenerationJobs.set(reportId, job);
+  const cleanup = () => {
+    if (explanationGenerationJobs.get(reportId) === job) {
+      explanationGenerationJobs.delete(reportId);
+    }
+  };
+  void job.then(cleanup, cleanup);
+  return job;
+}
 
 function handlePdfUpload(req: Request, res: Response, next: NextFunction): void {
   upload.single("file")(req, res, (error: unknown) => {
@@ -174,30 +244,25 @@ router.post(
     }
 
     try {
-      await connectMongo();
-      const saved = await FinancialAnalysis.findById(parsedParams.data.reportId);
-      if (!saved) {
+      const explanations = await getOrGenerateExplanations(
+        parsedParams.data.reportId,
+      );
+      if (!explanations) {
         res.status(404).json({ error: "Saved report not found." });
         return;
       }
 
-      if (saved.explanations) {
-        res.json(GenerateReportExplanationsResponse.parse(saved.explanations));
-        return;
-      }
-
-      const generated = await createBilingualFinancialExplanations(saved.metrics);
-      const validated = GenerateReportExplanationsResponse.parse(generated);
-      saved.explanations = validated;
-      await saved.save();
-      res.json(validated);
+      res.json(GenerateReportExplanationsResponse.parse(explanations));
     } catch (error) {
       if (error instanceof MongoConfigurationError) {
         res.status(503).json({ error: error.message });
         return;
       }
       req.log.error(
-        { reportId: parsedParams.data.reportId },
+        {
+          reportId: parsedParams.data.reportId,
+          ...safeExplanationErrorFields(error),
+        },
         "Could not generate bilingual financial explanations",
       );
       res.status(503).json({

@@ -79,7 +79,7 @@ export default function HomePage() {
     if (!file) { setError(t.select); return; }
     setError('');
     extract.mutate({ data: { file } }, {
-      onSuccess: report => navigate(`/reports/${encodeURIComponent(report.id)}`),
+      onSuccess: report => navigate(`/reports/${encodeURIComponent(report.id)}/explanations?generate=1`),
       onError: error => {
         if (error.status !== 503) { setError(t.fail); return; }
         setError(error.message.includes('MONGODB_URI') ? t.database : t.databaseUnavailable);
@@ -91,7 +91,7 @@ export default function HomePage() {
     <main className="app-shell" dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
       <header className="topbar">
         <a className="brand" href="/" aria-label="SAHM home" data-testid="link-home">
-          <Brand />
+          <Brand language={language} />
         </a>
         <nav className="home-nav" aria-label={language === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'}>
           <a href="#home">{language === 'ar' ? 'الرئيسية' : 'Home'}</a>

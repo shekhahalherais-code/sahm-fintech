@@ -421,6 +421,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .explanation-prompt { display: grid; justify-items: center; gap: 14px; padding: 35px 24px; text-align: center; }
 .explanation-prompt h2 { margin: 0; color: #315644; font-size: 15px; }
 .explanation-prompt .explanation-error { padding: 0; margin: 0; }
+.explanation-prompt > p:not(.explanation-error) { max-width: 520px; margin: 0; color: #74857a; font-size: 11px; line-height: 1.7; }
 
 @media (max-width: 850px) {
   .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 42px; padding-bottom: 45px; }
@@ -625,27 +626,38 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .summary-card-foot > span:nth-child(2), .summary-card-foot > span:nth-child(3) { color: #71847a; }
 .explanation-selection-card { overflow: hidden; }
 .metric-tabs {
-  display: flex;
-  gap: 7px;
-  padding: 15px 20px 0;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 10px;
+  padding: 16px 20px 0;
 }
 .metric-tab {
-  flex: 0 0 auto;
-  min-height: 36px;
-  padding: 0 13px;
+  min-width: 0;
+  min-height: 124px;
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 8px;
+  padding: 13px 14px;
   border: 1px solid #e1e7dd;
-  border-radius: 7px;
+  border-radius: 11px;
   background: #fbfbf6;
   color: #60786a;
   font-size: 10px;
   font-weight: 700;
+  text-align: start;
+  white-space: normal;
   cursor: pointer;
-  transition: color .16s, background-color .16s, border-color .16s;
+  transition: color .16s, background-color .16s, border-color .16s, transform .16s, box-shadow .16s;
 }
-.metric-tab:hover { border-color: #aac8b4; color: #234d3d; }
+.metric-tab:hover { border-color: #aac8b4; color: #234d3d; transform: translateY(-1px); }
 .metric-tab.active { border-color: #214d3e; background: #214d3e; color: #f7f6ef; }
+.metric-tab:focus-visible { outline: 2px solid #75a98a; outline-offset: 2px; }
+.metric-tab-label { color: #688071; font-size: 10px; line-height: 1.45; }
+.metric-tab-value { max-width: 100%; color: #234b3b; font: 800 clamp(17px,1.6vw,22px)/1.25 var(--app-font-serif); letter-spacing: -.03em; overflow-wrap: anywhere; }
+.metric-tab-meta,.metric-tab-page { color: #829087; font-size: 8px; line-height: 1.45; overflow-wrap: anywhere; }
+.metric-tab.active .metric-tab-label,.metric-tab.active .metric-tab-value { color: #f7f6ef; }
+.metric-tab.active .metric-tab-meta,.metric-tab.active .metric-tab-page { color: #d1e5d8; }
 .selected-metric-panel { padding: 20px 22px 23px; }
 .selected-metric-heading {
   display: flex;
@@ -689,8 +701,9 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 @media (max-width: 650px) {
   .summary-card-link { min-height: 112px; }
   .summary-card-foot { align-items: flex-start; }
-  .metric-tabs { padding: 12px 13px 0; }
-  .metric-tab { min-height: 35px; padding-inline: 11px; }
+  .metric-tabs { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 8px; padding: 12px 13px 0; }
+  .metric-tab { min-height: 112px; padding: 11px; }
+  .metric-tab-value { font-size: clamp(16px,5vw,20px); }
   .selected-metric-panel { padding: 16px 14px 18px; }
   .selected-metric-heading { gap: 8px; }
   .selected-metric-meta { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px 12px; }

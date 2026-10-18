@@ -1,0 +1,152 @@
+Improve the existing SAHM | سهم financial report explanation feature to make it genuinely educational for beginner investors.
+
+IMPORTANT: The website is already working. This is a focused improvement to the AI-generated explanations, NOT a redesign or a rebuild.
+
+Create a checkpoint before making changes.
+
+## 1. Update the explanation headings
+
+On the existing Simplified Reading page, keep the two explanation sections but use these exact headings:
+
+**Arabic:**
+- ما هو هذا الرقم؟
+- كيف أقرأ هذا الرقم كمستثمر؟
+
+**English:**
+- What Does This Number Mean?
+- How Should I Interpret This Number as an Investor?
+
+Do not change the overall page structure or add unnecessary sections.
+
+## 2. Explain financial terms in simple language
+
+Under "ما هو هذا الرقم؟", provide a clear, beginner-friendly explanation of the selected financial metric.
+
+For example:
+- Revenue: Explain what the company's revenue represents.
+- Net Profit: Explain how much profit remains after relevant expenses and costs.
+- Total Assets: Explain what the company owns or controls.
+- Total Liabilities: Explain the company's financial obligations.
+- Total Equity: Explain the shareholders' remaining interest after liabilities.
+
+Use industry-specific definitions when necessary. For a bank, distinguish net operating income from ordinary revenue and do not mislabel the extracted metric.
+
+Each explanation should be short, accurate, and easy for someone with no financial background to understand.
+
+## 3. Teach beginners how to interpret the number
+
+Under "كيف أقرأ هذا الرقم كمستثمر؟", use the existing AI integration to generate a meaningful educational interpretation based on the actual extracted report data.
+
+The explanation should answer:
+
+- What can this financial number tell an investor?
+- What could an increase or decrease indicate?
+- What other financial metrics should the investor examine before drawing conclusions?
+- Is there enough verified information to interpret the company's performance?
+
+For example, when explaining revenue:
+
+"ارتفاع الإيرادات مقارنة بالسنة السابقة قد يشير إلى نمو نشاط الشركة، لكن زيادة الإيرادات لا تعني بالضرورة زيادة الأرباح. لذلك من المهم مقارنتها بصافي الربح والمصاريف."
+
+This is an illustrative educational example, NOT a statement about the uploaded company.
+
+The AI must adapt each explanation to the actual financial metric, company type, and verified report data.
+
+Do not reuse generic explanations for every metric.
+
+## 4. Add comparisons only when supported by real data
+
+If verified figures from previous years are available in the uploaded report:
+
+- Compare the current and previous periods.
+- Calculate percentage changes accurately.
+- Explain the possible significance of the change in simple language.
+- Clearly distinguish actual observed performance from possible interpretations.
+
+If previous-year figures are unavailable:
+
+- Do not invent figures or growth percentages.
+- Do not claim that the metric increased or decreased.
+- Explain which comparison would help the investor understand the metric.
+
+Never present an increase as automatically positive or a decrease as automatically negative.
+
+Do not display positive-growth arrows or percentages unless they are supported by verified comparative figures.
+
+## 5. Keep source references in their own section
+
+The investor explanation must NOT simply repeat:
+- The PDF filename
+- The source page number
+- The financial reporting period
+- The extracted numerical value without interpretation
+
+These details already belong in the existing source-reference section.
+
+Keep the source-reference section visible and accurate, including the original report filename, page number, and source evidence.
+
+## 6. Use the existing AI and MongoDB integration
+
+- Reuse the existing AI integration and backend endpoints wherever possible.
+- Generate explanations based on verified financial data from the uploaded PDF.
+- Support both Arabic and English.
+- Save the generated explanations to MongoDB.
+- Retrieve saved explanations when users revisit or refresh the report.
+- Detect and regenerate previously saved explanations that only repeat citations or lack educational meaning.
+- Avoid unnecessary duplicate AI requests.
+- If AI generation fails, display a short, accurate educational fallback without inventing company-specific conclusions.
+
+## 7. Preserve the current design and functionality
+
+DO NOT redesign the website.
+
+Keep the existing:
+- Stitch-inspired layout
+- SAHM logo and branding
+- Green, gold, and ivory color palette
+- Arabic RTL and English LTR layouts
+- Financial metric cards and navigation
+- PDF upload and extraction
+- Report dashboard
+- MongoDB report storage
+- Source references and page citations
+- PDF summary download
+- Authentication functionality, if present
+
+Do not modify unrelated frontend components, backend services, database schemas, credentials, or environment variables unless strictly necessary for this improvement.
+
+Keep explanations visually clean and concise, ideally 1–3 short sentences per section.
+
+Do not add lengthy financial essays, unnecessary cards, or investment recommendation features.
+
+## 8. Educational safety and accuracy
+
+SAHM is an educational financial literacy platform, not an investment advisory service.
+
+- Do not recommend buying, selling, or holding shares.
+- Do not classify a company as a guaranteed good or bad investment.
+- Do not label a company safe or risky based on a single number.
+- Clearly acknowledge when the available data is insufficient.
+- Avoid presenting AI-generated interpretation as a verified fact from the source report.
+- Keep the original extracted numbers and source citations unchanged.
+
+## 9. Test the existing saved report
+
+Use the already saved NBK 2025 financial report for testing. Do not upload or create duplicate reports.
+
+Verify:
+
+1. The updated Arabic and English headings display correctly.
+2. Every financial metric has a meaningful beginner-friendly explanation.
+3. Net operating income, net profit, assets, liabilities, and equity have distinct interpretations.
+4. Explanations do not simply repeat page numbers or citations.
+5. No unsupported growth rates or investment conclusions appear.
+6. The explanations persist in MongoDB after refreshing the page.
+7. Switching between Arabic and English works.
+8. All existing PDF upload, extraction, report retrieval, and summary-download features continue working.
+
+Report which tests passed, which failed, and any remaining issues.
+
+Do not claim success unless the functionality has actually been verified.
+
+**Final goal:** Make SAHM feel like a simple, trustworthy financial teacher that helps beginner investors understand financial numbers and learn how to interpret them, while preserving the existing working website.

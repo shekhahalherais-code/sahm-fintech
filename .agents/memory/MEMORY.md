@@ -1,3 +1,3 @@
 - [Atlas network access](atlas-network-access.md) — Replit development egress can change; check the current address and allowlist it for Atlas.
 - [Arabic financial PDFs](arabic-financial-pdfs.md) — PDF.js can split table numerals and punctuation into positioned fragments; use statement headers and coordinates.
-- [SAHM financial data integrity](sahm-financial-data-integrity.md) — Never present Stitch/demo values as analysis; use source-backed report values or show unavailable.
+- [SAHM financial data integrity](sahm-financial-data-integrity.md) — Use source-backed figures; compare only like-for-like verified periods, otherwise state that the trend is unavailable.

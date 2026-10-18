@@ -157,7 +157,7 @@ export default function ReportReviewPage() {
   return (
     <main className="report-dashboard" dir={dir} lang={language}>
       <aside className="dashboard-rail">
-         <Link href="/" className="rail-brand" aria-label="SAHM home" data-testid="link-home"><Brand variant="rail" /></Link>
+         <Link href="/" className="rail-brand" aria-label="SAHM home" data-testid="link-home"><Brand variant="rail" language={language} /></Link>
         <div className="rail-caption">{t.navigation}</div>
         <nav className="rail-nav" aria-label={t.navigation}>
           <a className="rail-link active" href="#report-overview" aria-label={t.overview} aria-current="page"><LayoutDashboard size={17} /><span>{t.overview}</span></a>
