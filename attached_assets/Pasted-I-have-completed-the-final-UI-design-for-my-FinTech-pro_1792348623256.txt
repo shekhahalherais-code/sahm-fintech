@@ -1,0 +1,107 @@
+I have completed the final UI design for my FinTech project, **SAHM | سهم**, using Google Stitch.
+
+I have uploaded the exported Stitch design as a ZIP file.
+
+Your task is to integrate this design into my **EXISTING, FULLY FUNCTIONAL SAHM APPLICATION**.
+
+## 1. CRITICAL — Preserve all existing functionality
+
+The current application is already working and has been tested.
+
+DO NOT rebuild the application from scratch.
+
+DO NOT delete, replace, or break any existing functionality, including:
+
+- PDF financial report upload and text extraction
+- AI-powered financial report analysis
+- Arabic and English AI explanations
+- Financial metrics extraction and visualization
+- MongoDB Atlas database connection
+- Saving and retrieving reports from MongoDB
+- Authentication and existing user functionality
+- Financial dashboard and report results
+- Source references and page citations
+- PDF summary generation and download
+- Existing backend APIs, routes, and environment variables
+
+Preserve all existing data, integrations, and working business logic.
+
+## 2. Apply the Stitch design
+
+Use the uploaded Google Stitch files as the visual design reference.
+
+Replace the existing frontend styling and layout with the final Stitch design, while keeping the existing application architecture and functionality.
+
+Implement the following screens:
+
+**Homepage**
+- Kuwait skyline hero image
+- Arabic headline: "افهم الأرقام قبل القرار."
+- Short introduction to SAHM
+- "ابدأ الآن" button that scrolls to the report upload section
+- Existing "افهم تقريرك المالي بسهولة" PDF upload section directly below the hero
+
+**Financial Dashboard**
+- Match the clean, minimal Stitch dashboard design
+- Display real financial metrics extracted from uploaded reports
+- Keep charts and figures connected to the existing backend
+- Preserve correct financial units, labels, and source references
+
+**AI Explanation Page**
+- Match the final Stitch explanation page
+- Display the actual AI-generated explanations and report-specific financial figures
+- Preserve all working actions and report navigation
+
+## 3. Design requirements
+
+- Arabic-first interface with proper RTL support
+- Preserve English language switching and LTR layouts
+- Minimalist, professional FinTech appearance
+- Ivory and white backgrounds with dark emerald-green accents
+- Clean typography, balanced spacing, and responsive layouts
+- Match the Stitch design as closely as possible
+- Do not add unnecessary features or extra sections
+
+## 4. Data integrity
+
+The financial figures shown in Stitch are visual placeholders only.
+
+NEVER hardcode Stitch sample values such as 502.3 or 120.4 into the real application.
+
+All displayed metrics, charts, explanations, and report details must come from the existing application data and APIs.
+
+Preserve correct financial terminology and units. Do not silently rename or misclassify financial metrics.
+
+## 5. Safe implementation process
+
+Before modifying anything:
+
+1. Inspect the existing application structure and frontend framework.
+2. Inspect the uploaded Stitch ZIP and identify the relevant design files.
+3. Verify that a rollback checkpoint or backup is available.
+4. Explain which frontend files need to change.
+5. Confirm that the existing backend and database integrations will remain untouched.
+6. Present a short integration plan and WAIT FOR MY APPROVAL before making changes.
+
+Do not overwrite the project with the exported Stitch code.
+
+Adapt the Stitch UI components to the existing application.
+
+## 6. Testing after implementation
+
+Once I approve the plan and you finish integrating the design, test:
+
+1. Homepage and responsive layout
+2. PDF upload
+3. Financial report extraction and AI analysis
+4. MongoDB report saving and retrieval
+5. Dashboard with actual extracted values
+6. Arabic and English explanations
+7. PDF summary download
+8. Existing authentication and navigation
+
+Report which tests passed, which failed, and any issues found.
+
+Do not claim functionality works unless it has actually been tested.
+
+**Final objective: Make my existing SAHM website LOOK like the final Stitch design while keeping everything that already works fully functional.**
