@@ -7,10 +7,11 @@ import {
   useGenerateReportExplanations,
   useGetFinancialReport,
 } from '@workspace/api-client-react';
+import { Brand } from '@/components/brand';
 
 const copy = {
   en: {
-    overline: 'PLAIN-LANGUAGE GUIDE', title: 'A simpler way to read this report',
+    overline: 'PLAIN-LANGUAGE GUIDE', title: 'Understand the report figures',
     subtitle: 'Each note is based on a figure extracted from this filing. Open the cited page to check the original context.',
     report: 'Report', back: 'Back to dashboard', home: 'SAHM home', switch: 'العربية', print: 'Download summary',
     summary: 'The short version', figures: 'What the figures mean', source: 'Source evidence',
@@ -27,7 +28,7 @@ const copy = {
     noItems: 'No figure-specific notes were returned for this report.',
   },
   ar: {
-    overline: 'قراءة مبسطة', title: 'طريقة أبسط لقراءة التقرير',
+    overline: 'قراءة مبسطة', title: 'افهم أرقام التقرير',
     subtitle: 'يستند كل شرح إلى رقم مستخرج من هذا الإفصاح. افتح الصفحة المذكورة للتحقق من سياق المصدر الأصلي.',
     report: 'التقرير', back: 'العودة إلى لوحة التقرير', home: 'الصفحة الرئيسية لسهم', switch: 'English', print: 'تنزيل الملخص',
     summary: 'ملخص سريع', figures: 'ماذا تعني الأرقام', source: 'دليل المصدر',
@@ -91,7 +92,7 @@ export default function ReportExplanationsPage() {
   return <main className="report-dashboard explanation-dashboard" dir={dir} lang={language}>
     <aside className="dashboard-rail">
       <Link href="/" className="rail-brand" aria-label={t.home} data-testid="link-explanation-home">
-        <span className="rail-brand-mark">س</span><span><b>SAHM</b><small>سهم</small></span>
+        <Brand variant="rail" />
       </Link>
       <div className="rail-caption">{t.report}</div>
       <nav className="rail-nav" aria-label={t.report}>

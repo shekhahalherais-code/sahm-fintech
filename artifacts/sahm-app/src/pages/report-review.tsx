@@ -7,6 +7,7 @@ import {
   useGetFinancialReport,
 } from '@workspace/api-client-react';
 import { AlertCircle, ArrowLeft, BookOpen, ChartNoAxesCombined, Download, FileSearch, FileText, LayoutDashboard, Lightbulb, Printer, Settings2 } from 'lucide-react';
+import { Brand } from '@/components/brand';
 
 const words = {
   en: {
@@ -156,7 +157,7 @@ export default function ReportReviewPage() {
   return (
     <main className="report-dashboard" dir={dir} lang={language}>
       <aside className="dashboard-rail">
-        <Link href="/" className="rail-brand" aria-label="SAHM home" data-testid="link-home"><span className="rail-brand-mark">س</span><span><b>SAHM</b><small>سهم</small></span></Link>
+         <Link href="/" className="rail-brand" aria-label="SAHM home" data-testid="link-home"><Brand variant="rail" /></Link>
         <div className="rail-caption">{t.navigation}</div>
         <nav className="rail-nav" aria-label={t.navigation}>
           <a className="rail-link active" href="#report-overview" aria-label={t.overview} aria-current="page"><LayoutDashboard size={17} /><span>{t.overview}</span></a>

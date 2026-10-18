@@ -2,6 +2,7 @@ import { useRef, useState, type DragEvent, type ChangeEvent } from 'react';
 import { useLocation } from 'wouter';
 import { useExtractReport } from '@workspace/api-client-react';
 import { ArrowRight, FileText, LockKeyhole, X, UploadCloud } from 'lucide-react';
+import { Brand } from '@/components/brand';
 
 const copy = {
   en: {
@@ -24,7 +25,7 @@ const copy = {
   ar: {
     header: 'خطوة أوضح نحو الاستثمار',
     eyebrow: 'التقارير المالية، بوضوح أكبر',
-    headline: <>افهم الأرقام<br /><em>قبل القرار.</em></>,
+     headline: <>افهم الأرقام قبل القرار.</>,
     sub: 'سهم منصة تساعد الطلاب والمستثمرين المبتدئين في الكويت على فهم التقارير المالية للشركات المدرجة، بلغة بسيطة وواضحة ومن واقع المصدر.',
     proof: ['مصمم للمبتدئين', 'يُحفظ الاستخراج دون ملف PDF'],
     upload: 'افهم تقريرك المالي بسهولة', hint: 'ارفع تقرير الشركة وابدأ بالأرقام المنشورة فيه.', step: 'الخطوة ١ / ٢',
@@ -90,8 +91,12 @@ export default function HomePage() {
     <main className="app-shell" dir={language === 'ar' ? 'rtl' : 'ltr'} lang={language}>
       <header className="topbar">
         <a className="brand" href="/" aria-label="SAHM home" data-testid="link-home">
-          <span className="brand-mark">س</span><span className="brand-name">SAHM</span><span className="brand-ar">سهم</span>
+          <Brand />
         </a>
+        <nav className="home-nav" aria-label={language === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'}>
+          <a href="#home">{language === 'ar' ? 'الرئيسية' : 'Home'}</a>
+          <a href="#upload-section">{language === 'ar' ? 'رفع تقرير' : 'Upload report'}</a>
+        </nav>
         <div className="header-right">
           <span className="header-note">{t.header}</span>
           <button className="language-toggle" type="button" onClick={changeLanguage} data-testid="button-language">
@@ -100,7 +105,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      <section className="hero">
+      <section className="hero" id="home">
         <div className="hero-copy">
           <div className="eyebrow">{t.eyebrow}</div>
           <h1>{t.headline}</h1>
@@ -150,14 +155,6 @@ export default function HomePage() {
         </section>
       </section>
 
-      <section className="content-band">
-        <div className="band-inner">
-          <div><div className="band-title">{t.reportLabel}</div><div className="band-desc">{t.flowSub}</div></div>
-          <div className="flow" aria-label={t.reportLabel}>
-            {[t.f1, t.f2, t.f3].map((label, index) => <div className="flow-step" key={label}><span className="flow-number">0{index + 1}</span><span>{label}</span></div>).flatMap((step, index, all) => index < all.length - 1 ? [step, <span className="flow-line" key={`line-${index}`} />] : [step])}
-          </div>
-        </div>
-      </section>
       <footer className="page-footer"><span className="footer-brand">{t.footer}</span><span>{t.footerRight}</span></footer>
     </main>
   );
