@@ -1,0 +1,136 @@
+The MongoDB connection test succeeded.
+
+I want you to complete two tasks for my existing FinTech website, **SAHM | سهم**, while preserving all working functionality.
+
+## TASK 1 — Verify MongoDB Report Saving
+
+1. Review the existing report creation and retrieval endpoints.
+2. Confirm that reports are actually saved to MongoDB, not just stored temporarily.
+3. Use a clearly labeled dummy financial report to test saving and retrieving.
+4. Delete the dummy report after testing and verify that it was deleted.
+5. Do not modify the existing website design during this testing phase.
+6. Do not expose credentials, connection strings, or sensitive report data.
+
+Report which tests passed, which failed, and any fixes needed. Do not claim success unless the save and retrieval operations were actually verified.
+
+## TASK 2 — Implement the Attached UI Design
+
+I have attached a reference image showing exactly how I want **SAHM | سهم** to look.
+
+Please use this image as the primary visual reference and redesign the website to closely match its professional, modern FinTech appearance.
+
+**Most importantly, when a user uploads a financial report and the analysis is completed, display the results in a beautiful, interactive dashboard matching the attached reference image.**
+
+### A. Homepage
+
+Recreate the homepage shown in the reference image, including:
+
+- SAHM branding and logo.
+- Arabic headline: "افهم الأرقام قبل القرار".
+- A clean navigation bar.
+- A prominent financial report upload button.
+- A modern hero section with Kuwait-inspired visual elements.
+- A section explaining how SAHM works.
+- A section explaining how the platform helps beginner investors understand financial disclosures.
+
+### B. Financial Analysis Dashboard
+
+After the user uploads a PDF financial report and the analysis is completed, navigate to a dedicated results dashboard.
+
+Use the attached image as the design reference.
+
+The dashboard should include:
+
+- Company name and report year.
+- Summary cards displaying important financial indicators.
+- Revenue.
+- Net profit.
+- Total assets.
+- Shareholders' equity.
+- Interactive charts showing financial trends when sufficient data is available.
+- A clean sidebar for navigation.
+- An organized layout with clear financial information.
+
+**Important:** All displayed financial figures must come from the uploaded report and its verified analysis results. Never use invented or hardcoded financial figures as if they belong to the uploaded company.
+
+If a financial metric is missing from the report, display "Not available" or "غير متوفر" rather than inventing a value.
+
+Only display year-over-year comparisons when the report contains sufficient comparable data.
+
+### C. Simplified Financial Explanations
+
+Create a section called "الشرح المبسط" where users can understand the financial report in simple language.
+
+Include expandable explanations for available metrics such as:
+
+- Net profit.
+- Revenue.
+- Total assets.
+- Shareholders' equity.
+
+Explain what each metric means and what the reported number represents.
+
+Keep explanations beginner-friendly, factual, and based on the actual report.
+
+### D. Financial Report Summary
+
+Create a professionally designed report summary section matching the reference image.
+
+Include:
+
+- Company name.
+- Reporting period.
+- Financial highlights.
+- Key observations supported by the report.
+- A PDF download button for the generated summary.
+
+Do not present investment recommendations or guarantee whether a stock is a good investment.
+
+### E. Responsive Design
+
+Make the entire website fully responsive.
+
+The mobile version should look polished and professional, similar to the mobile mockup in the attached image.
+
+### F. Language Support
+
+Support both Arabic and English.
+
+- Arabic: right-to-left (RTL).
+- English: left-to-right (LTR).
+- Provide a working language toggle.
+- Use professional typography and consistent spacing.
+
+### G. Visual Identity
+
+Follow the attached design's visual identity:
+
+- Deep forest green and dark teal.
+- White and soft light-blue backgrounds.
+- Subtle mint-green accents.
+- Rounded cards and buttons.
+- Clean financial charts.
+- Elegant, modern typography.
+- Professional Kuwaiti FinTech branding.
+
+## IMPORTANT TECHNICAL REQUIREMENTS
+
+1. Preserve the existing MongoDB connection and database functionality.
+2. Preserve all working backend endpoints and report-upload functionality.
+3. Reuse the existing analysis pipeline rather than replacing it unnecessarily.
+4. Connect the dashboard to real analysis results, not static demo data.
+5. Do not expose API keys, MongoDB credentials, or other secrets.
+6. Do not introduce unnecessary features or paid services.
+7. Keep the application functional throughout development.
+8. Implement and test changes in small, manageable steps.
+9. Do not claim a feature is working unless you have tested it.
+
+## FINAL DELIVERABLE
+
+I want a functional SAHM website that closely matches the attached reference design, with a complete user journey:
+
+**Homepage → Upload Financial Report → Analyze Report → View Interactive Financial Dashboard → Read Simplified Explanations → Download Summary PDF**
+
+First verify the MongoDB report-saving functionality, then implement the visual redesign.
+
+After implementation, test the complete user journey and provide a clear summary of what works, what still needs improvement, and whether any features use placeholder data.
