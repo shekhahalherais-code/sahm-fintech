@@ -1,0 +1,185 @@
+I want to make a few carefully controlled improvements to my EXISTING, WORKING FinTech website, **SAHM | سهم**.
+
+The application already successfully uploads PDF financial reports, extracts financial data, generates AI explanations, displays results, and uses MongoDB Atlas.
+
+**DO NOT rebuild the application or replace any working backend functionality.**
+
+I am attaching screenshots of my FINAL Google Stitch designs. These screenshots are now the PRIMARY visual references, because the previous integration did not accurately match the original design.
+
+## 1. Add Simple Authentication — Prefer Clerk
+
+Add a minimal, beginner-friendly authentication experience.
+
+Requirements:
+- Add a "تسجيل الدخول" / "Login" option in the website navigation.
+- Allow users to sign up and sign in easily.
+- Prefer Clerk authentication if it is compatible with the existing application.
+- Support persistent login sessions so returning users do not need to sign in every time.
+- Provide a simple user account menu with logout.
+- Keep the authentication interface visually consistent with SAHM's minimalist design.
+- Support Arabic and English where possible.
+- Do not add unnecessary registration steps or complex profile forms.
+
+**Important security and data requirements:**
+- Inspect the existing application and MongoDB report schema before implementing authentication.
+- Associate newly saved reports with the authenticated user's verified identity.
+- Ensure users can access only their own private reports through server-side authorization checks.
+- Never trust a user ID supplied directly by the frontend.
+- Preserve all existing reports and database records.
+- Do not automatically assign historical reports to new accounts.
+- Do not delete or overwrite existing report data.
+- Do not expose Clerk keys, MongoDB credentials, or other secrets.
+- Use secure, supported authentication sessions rather than building a custom password system.
+- If Clerk requires configuration or credentials, explain the exact setup steps and ask me before proceeding.
+- Do not create a fake or non-functional login button.
+
+If implementing authentication requires significant backend or database changes, explain those changes and request my approval before making them.
+
+## 2. Create and Integrate the SAHM Logo
+
+Create a clean, professional, minimalist logo for **SAHM | سهم**.
+
+Logo requirements:
+- Use the Arabic word "سهم" as the main identity.
+- Maintain the existing dark emerald-green and ivory color palette.
+- Keep the logo simple, elegant, and suitable for a financial technology platform.
+- Use a subtle arrow or financial-growth concept only if it improves the design.
+- Avoid complicated symbols, gradients, or decorative elements.
+- Make sure it looks good in the navigation bar and at small sizes.
+- Create a matching favicon.
+
+Do not redesign the entire brand or change the website's existing colors.
+
+## 3. Match My Google Stitch Screenshots Accurately
+
+I am uploading screenshots of the FINAL approved Google Stitch design.
+
+Treat these screenshots as the **visual source of truth**.
+
+The previously exported Stitch files can be used as supporting references, but if there is a visual difference, follow the new screenshots.
+
+Recreate the screenshots as closely as possible in the existing frontend.
+
+Pay close attention to:
+- Page layout and section positioning
+- Typography and text hierarchy
+- Spacing, alignment, and margins
+- Card dimensions and border radius
+- Background colors
+- Emerald-green accents
+- Button design and placement
+- Financial dashboard layout
+- AI explanation layout
+- Arabic RTL alignment
+- Responsive desktop and mobile behavior
+
+### Homepage
+
+Match the attached homepage screenshot.
+
+Preserve:
+- The Kuwait skyline photograph
+- The headline "افهم الأرقام قبل القرار."
+- The short introduction to SAHM
+- The "ابدأ الآن" button
+- The report upload section immediately below the hero, accessible by scrolling
+- The headline "افهم تقريرك المالي بسهولة"
+
+Do not add unrelated homepage sections.
+
+### Financial Dashboard
+
+Match the attached dashboard screenshot as closely as possible.
+
+Preserve:
+- The clean financial metric cards
+- The simple financial chart
+- The report title and company information
+- The existing source references
+- The original navigation and report actions
+
+All financial figures must come from the actual uploaded report and existing backend APIs.
+
+Do not hardcode any example values from the screenshots.
+
+### AI Financial Explanation Page
+
+Match the attached explanation page screenshot.
+
+Preserve:
+- The simple explanation layout
+- Financial figures and their units
+- Source references and page citations
+- Existing report navigation
+- Existing PDF summary functionality
+
+Use the real saved AI explanations, not placeholder text.
+
+## 4. Preserve All Existing Working Features
+
+These functions MUST remain operational:
+
+- PDF uploading
+- PDF text extraction
+- AI-powered financial analysis
+- Arabic and English explanations
+- Financial metric extraction
+- MongoDB Atlas connection
+- Report creation, saving, and retrieval
+- Financial dashboard and charts
+- Source references and citations
+- PDF summary generation and download
+- Existing backend API endpoints
+- Existing environment variables and secrets
+- All existing report data
+
+Do not change financial calculation logic, data extraction logic, AI prompts, database connection settings, or working API behavior unless strictly required for the approved authentication integration.
+
+## 5. Safe Implementation Process
+
+Before making changes:
+
+1. Inspect the existing codebase and the uploaded screenshots.
+2. Confirm that a working rollback checkpoint exists.
+3. Identify the exact files that need modification.
+4. Separate the work into:
+   - Visual design improvements
+   - Logo and favicon
+   - Authentication integration
+5. Implement the visual design and logo first.
+6. Test the existing application functionality.
+7. Present the authentication integration plan separately, including any required backend or MongoDB schema changes.
+8. WAIT FOR MY APPROVAL before making authentication-related backend or database changes.
+
+Do not delete any existing reports or collections.
+
+Do not replace the existing project with a new Stitch-generated application.
+
+## 6. Testing Requirements
+
+After each implementation stage, test the relevant functionality.
+
+For the visual design:
+- Compare the finished pages against my attached Stitch screenshots.
+- Check Arabic RTL and English LTR.
+- Check desktop and mobile layouts.
+- Test PDF upload and analysis.
+- Confirm actual report values appear correctly.
+- Verify saved AI explanations and PDF download.
+
+For authentication, once approved:
+- Test sign-up, sign-in, persistent sessions, and logout.
+- Verify reports are associated with the correct user.
+- Verify one user cannot access another user's private reports.
+- Verify that existing reports remain intact.
+- Confirm that the original PDF analysis workflow still works.
+
+Clearly report what passed, what failed, and what still requires configuration.
+
+Do not claim success without testing.
+
+## FINAL GOAL
+
+Keep the existing SAHM application fully functional, make its frontend accurately match my Google Stitch screenshots, add a professional SAHM logo, and introduce simple, secure authentication without compromising existing reports, APIs, AI analysis, or MongoDB data.
+
+**Start by reviewing the screenshots and presenting a concise implementation plan. Do not modify files until I approve the plan.**
