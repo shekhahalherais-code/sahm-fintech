@@ -1,0 +1,113 @@
+I want to simplify and improve the existing SAHM report-results experience.
+
+The application already uploads and analyzes PDF reports, extracts real financial figures, and stores reports in MongoDB. Preserve all working functionality.
+
+### 1. Remove the redundant Overview page from the user journey
+
+The current "نظرة عامة" page repeats financial information already shown elsewhere.
+
+Make "قراءة مبسطة" the main results page immediately after a successful PDF analysis.
+
+Rename its main heading to "افهم تقريرك".
+
+Display the extracted key financial metrics in clean, clickable cards.
+
+Do not delete extracted data, report records, source evidence, or backend endpoints. Remove only redundant frontend presentation and navigation, and preserve any necessary report metadata and summary download.
+
+### 2. Fix the missing AI explanations
+
+The current explanation page shows:
+- "لا يتوفر شرح مبسط محفوظ لهذا الرقم"
+- "لا يتوفر سياق محفوظ للمستثمر لهذا الرقم"
+
+Investigate why the explanations are missing.
+
+Check:
+- Existing AI generation functions and prompts
+- AI API calls and errors
+- MongoDB explanation fields
+- Report retrieval and response mapping
+- Whether the frontend is reading the correct saved fields
+- Whether previously saved reports require explanation generation
+
+Do not assume the AI service is working just because financial extraction succeeds.
+
+### 3. Generate useful explanations for each financial metric
+
+For every supported extracted financial metric, provide:
+
+**ما هو هذا الرقم؟**
+A short, beginner-friendly explanation of the metric.
+
+**ماذا يعني للمستثمر المبتدئ؟**
+A short explanation of why it matters and how it should be interpreted in the context of the uploaded company report.
+
+**مرجع الرقم في التقرير الأصلي**
+The verified source document, page number, and supporting evidence.
+
+Use the existing AI integration to generate report-specific explanations grounded in the extracted financial data.
+
+Avoid unsupported claims, investment recommendations, or fabricated comparisons.
+
+Use correct financial terminology, particularly for banks. For example, do not automatically equate net operating income with general company revenue.
+
+### 4. Save and retrieve explanations correctly
+
+Save the generated explanations in MongoDB, linked to the correct report and metric.
+
+When the user revisits a saved report, retrieve its saved explanations instead of generating them again.
+
+For older reports missing explanations, provide a safe way to generate and save them on demand.
+
+Avoid duplicate records and unnecessary AI calls.
+
+If AI generation fails, show a clear retry option rather than an empty explanation panel.
+
+### 5. Preserve the Google Stitch design
+
+Match my previously attached Stitch screenshots:
+- Minimal ivory background
+- Dark emerald-green accents
+- Clean metric cards
+- Metric selection tabs
+- Three clearly separated explanation sections
+- Verified source references
+- Arabic RTL and English LTR
+- Responsive desktop and mobile layouts
+
+Do not add long paragraphs, excessive labels, or duplicate sections.
+
+Only show growth percentages when valid comparable historical figures are available. Never invent growth rates.
+
+### 6. Protect existing functionality
+
+Preserve:
+- PDF upload and text extraction
+- Financial data extraction
+- Existing AI integration
+- MongoDB Atlas connection
+- Existing report data and APIs
+- Arabic/English support
+- Authentication if already implemented
+- PDF summary download
+
+Create or confirm a rollback checkpoint before editing.
+
+### 7. Test the actual problem
+
+Use the existing NBK 2025 report as a test case.
+
+Verify that clicking "صافي الربح" displays:
+1. The actual saved financial figure and correct unit.
+2. A real, non-placeholder beginner explanation.
+3. A real, non-placeholder investor-context explanation.
+4. The correct source citation.
+5. The same saved explanations after refreshing the page.
+
+Repeat for the other supported financial metrics.
+
+Test that the streamlined results page works and that MongoDB data remains intact.
+
+Report exactly what passed and failed.
+
+**First inspect the existing implementation and explain the root cause of the missing explanations. Present a concise plan and wait for my approval before modifying any files.**
