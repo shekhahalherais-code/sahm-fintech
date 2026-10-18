@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "SAHM | سهم"
+description = "A bilingual Arabic-English financial education app for beginners in Kuwait to upload text-based financial reports, review extracted metrics with page citations, and understand the source of every reported figure."
+version = "1.0.0"
+id = "artifacts/sahm-app"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18662
+
+[services.development]
+run = "pnpm --filter @workspace/sahm-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sahm-app", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/sahm-app/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18662"
+BASE_PATH = "/"

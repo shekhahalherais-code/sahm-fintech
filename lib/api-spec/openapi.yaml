@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: reports
+    description: Phase 1 PDF upload and extraction operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,66 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /reports/extract:
+    post:
+      operationId: extractReport
+      tags: [reports]
+      summary: Extract financial information from an uploaded PDF report
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ReportUploadInput"
+      responses:
+        "201":
+          description: PDF extracted and analysis saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialReport"
+        "400":
+          description: Invalid PDF upload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The PDF has no usable text or no verifiable report content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Required persistence service is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /reports/{reportId}:
+    get:
+      operationId: getFinancialReport
+      tags: [reports]
+      summary: Retrieve a saved extraction for review
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Saved financial report extraction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialReport"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +95,90 @@ components:
           type: string
       required:
         - status
+    ReportUploadInput:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Text-based PDF financial report, up to 15 MB
+    FinancialMetric:
+      type: object
+      required:
+        - label
+        - category
+        - reportedValue
+        - currency
+        - unitScale
+        - reportingPeriod
+        - sourcePage
+        - sourceExcerpt
+        - verificationStatus
+      properties:
+        label:
+          type: string
+        category:
+          type: string
+          enum: [revenue, net_profit, assets, liabilities, equity, other]
+        reportedValue:
+          type: ["string", "null"]
+          description: Exact text value as reported; null when unavailable
+        currency:
+          type: ["string", "null"]
+        unitScale:
+          type: string
+          enum: [units, thousands, millions, unknown]
+        reportingPeriod:
+          type: ["string", "null"]
+        sourcePage:
+          type: ["integer", "null"]
+        sourceExcerpt:
+          type: ["string", "null"]
+        verificationStatus:
+          type: string
+          enum: [verified, unverified, unavailable]
+    FinancialReport:
+      type: object
+      required:
+        - id
+        - originalFileName
+        - companyName
+        - reportingPeriod
+        - currency
+        - unitScale
+        - metrics
+        - extractionNotes
+        - createdAt
+      properties:
+        id:
+          type: string
+        originalFileName:
+          type: string
+        companyName:
+          type: ["string", "null"]
+        reportingPeriod:
+          type: ["string", "null"]
+        currency:
+          type: ["string", "null"]
+        unitScale:
+          type: string
+          enum: [units, thousands, millions, unknown]
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialMetric"
+        extractionNotes:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
 
