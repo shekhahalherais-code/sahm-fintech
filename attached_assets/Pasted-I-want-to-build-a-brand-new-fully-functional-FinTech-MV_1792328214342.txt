@@ -1,0 +1,129 @@
+I want to build a brand-new, fully functional FinTech MVP called **SAHM | سهم**, starting from scratch.
+
+## Product overview
+
+SAHM is an AI-powered financial education platform designed to help beginners understand financial reports published by companies listed on Boursa Kuwait.
+
+**Tagline:** افهم الأرقام قبل القرار
+
+**English tagline:** Understand Before You Invest.
+
+### Problem
+Financial statements and disclosures contain complex accounting terminology and large amounts of numerical data. Beginners often struggle to interpret these reports and understand a company's financial performance.
+
+### Target audience
+Beginner investors in Kuwait, university students, and individuals interested in understanding the financial performance of publicly listed companies.
+
+### Solution
+Users upload a financial report in PDF format. SAHM extracts important financial information, explains it in simple Arabic or English, and presents the results through a visual dashboard with traceable references to the original report.
+
+## MVP features — build ONLY these three
+
+### Feature 1: Smart Financial PDF Upload & Extraction
+
+- Allow users to upload a text-based financial report in PDF format.
+- Validate file type and size.
+- Extract company name, reporting period, revenue, net profit, and other clearly identifiable financial metrics.
+- Show the original currency and units, including whether values are expressed in thousands or millions.
+- Display page references for extracted values.
+- Do not invent missing values.
+- Clearly label unverified or unavailable information.
+- Provide a review screen showing the extracted information.
+- Store structured analysis data in MongoDB.
+- Provide understandable error messages when extraction fails.
+
+### Feature 2: AI Financial Explainer
+
+- Explain financial metrics and accounting terminology in simple language.
+- Support Arabic and English.
+- Explain what each financial indicator means and why it matters.
+- Ground all company-specific explanations in extracted report data.
+- Display references to the original PDF pages.
+- Do not generate unsupported claims.
+- Do not provide stock predictions or buy/sell recommendations.
+- Use a server-side AI API with keys stored securely in environment variables.
+
+### Feature 3: Financial Dashboard & Downloadable Report
+
+- Display financial metrics in clean cards.
+- Include appropriate charts for available financial data.
+- Compare two reporting periods only when comparable values are available.
+- Clearly distinguish profit, revenue, assets, liabilities, and equity.
+- Generate a simplified downloadable PDF report containing the extracted metrics, explanations, source references, and appropriate disclaimers.
+- Never display fabricated example data as actual company data.
+
+## Visual design and branding
+
+Use a premium, minimalist FinTech design inspired by a modern Kuwaiti financial technology platform.
+
+Brand name: SAHM | سهم
+
+Color palette:
+- Deep forest green: #103B32
+- Dark emerald: #174C40
+- Muted mint green: #77B7A0
+- Warm off-white: #F8F7F3
+- Soft gray: #E9EEEB
+- Main text: #17312B
+
+Design principles:
+- Elegant, modern, professional, and uncluttered.
+- Generous whitespace.
+- Rounded cards and subtle shadows.
+- Clean financial charts.
+- Clear information hierarchy.
+- Responsive desktop, tablet, and mobile layouts.
+- Arabic RTL and English LTR support.
+- Accessible text contrast and readable typography.
+- A premium visual identity suitable for presenting to a FinTech judging panel.
+
+The website should include the following screens as part of the three MVP features:
+
+1. Landing page with product explanation and a prominent Upload Financial Report call to action.
+2. PDF upload and extraction review screen.
+3. Financial analysis dashboard.
+4. AI explanation section.
+5. Downloadable financial report.
+
+Avoid implementing unrelated features.
+
+## Technology stack
+
+- Frontend: React + Vite
+- Backend: Node.js + Express
+- Database: MongoDB Atlas + Mongoose
+- AI integration: Server-side AI API
+- PDF extraction: A suitable Node.js PDF text extraction library
+- Charts: Recharts or a comparable React charting library
+- Deployment target: Vercel-compatible architecture, with a suitable backend deployment approach if necessary
+
+## Important technical requirements
+
+- Keep API keys and MongoDB credentials in environment variables.
+- Never expose secrets in frontend code.
+- Validate uploaded files and API requests.
+- Limit PDF size and handle processing errors safely.
+- Do not automatically scrape or access Boursa Kuwait systems.
+- Use reports uploaded by the user.
+- Make sure financial values are accurately associated with their reporting period, currency, and unit scale.
+- Do not calculate comparisons when the available data is insufficient.
+- Avoid retaining uploaded PDF files unnecessarily.
+- Do not implement authentication, payments, subscriptions, stock trading, stock recommendations, or unrelated features.
+- Ensure the website runs correctly on Replit.
+
+## Development workflow
+
+Before writing any code:
+
+1. Read the replit.md file in the project root if it exists.
+2. Propose the project folder structure using client and server directories.
+3. Identify the required API routes, controllers, and database models.
+4. Explain the approach for PDF text extraction, AI analysis, and financial data validation.
+5. Divide development into small, testable milestones.
+6. Start with the PDF upload and extraction workflow, working from frontend to backend and database.
+7. Explain any external API requirements and potential costs.
+8. Include a testing strategy using known financial reports.
+9. Prioritize functional correctness before advanced visual styling.
+10. Explain the Vercel deployment approach.
+
+**IMPORTANT: Do not write code yet. Present the architecture and implementation plan first, then STOP and wait for my approval.**
