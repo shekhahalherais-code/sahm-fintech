@@ -1,0 +1,27 @@
+SAHM — Fix Financial Data Extraction for Newly Uploaded PDFs
+
+I tested SAHM with a new real financial report from Kuwait Finance House (KFH), and the dashboard displayed "Not Verified" for all major financial metrics, including revenue, net profit, total assets, liabilities, and equity.
+
+This is a critical issue because SAHM's main MVP feature is to analyze any newly uploaded financial report, without relying on pre-saved data.
+
+Please investigate and fix the actual root cause.
+
+1. Trace the complete PDF upload, text extraction, table extraction, AI analysis, and dashboard data flow.
+2. Check whether the PDF content is successfully extracted and whether financial statement tables are being detected.
+3. Support common financial report layouts, including multi-column tables, financial figures with commas, values expressed in thousands or millions, and comparative financial years.
+4. Handle bank-specific financial terminology. Do not assume every company uses the same financial statement labels.
+5. Extract financial metrics only when they can be verified against the uploaded report, including the correct currency, unit, reporting year, and source page.
+6. Generate beginner-friendly explanations automatically from the verified extracted data.
+7. If a metric is not applicable to a particular company or cannot be verified, clearly explain why. Do not invent figures or page references.
+8. Save the analysis to MongoDB, but do not require the report to exist in the database before analysis.
+9. Test the complete workflow with the newly uploaded KFH report and another previously unseen financial PDF, if available.
+10. Show actual test results: extracted metrics, source pages, which checks passed or failed, and any remaining limitations.
+
+IMPORTANT:
+- Do not hardcode KFH numbers or create company-specific fake data.
+- Fix the general PDF analysis pipeline so it works with different companies.
+- Preserve the current SAHM website design and existing features.
+- Do not delete existing reports.
+- Do not republish or push to GitHub automatically.
+
+Please focus only on making the core MVP functionality reliable.

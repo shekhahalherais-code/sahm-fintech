@@ -83,6 +83,12 @@ function displayMetricLabel(
   language: string,
   fallback: string,
 ) {
+  const isBankTotalOperatingIncome =
+    category === 'revenue' &&
+    /\btotal\s+operating\s+income\b|إجمالي\s+(?:الدخل|إيرادات)\s+التشغيل/i.test(sourceExcerpt ?? '');
+  if (isBankTotalOperatingIncome) {
+    return language === 'ar' ? 'إجمالي الدخل التشغيلي' : 'Total operating income';
+  }
   const isBankOperatingIncome =
     category === 'revenue' &&
     /صافي\s+إيرادات\s+التشغيل|\bnet\s+operating\s+income\b/i.test(sourceExcerpt ?? '');
@@ -313,13 +319,13 @@ function educationalFallback(
 ) {
   const lineText = `${metric.label} ${metric.sourceExcerpt ?? ''}`;
   const bankOperatingRevenue = metric.category === 'revenue'
-    && /net operating (?:income|revenue)|operating income|صافي\s*إيرادات\s*التشغيل/i.test(lineText);
+    && /(?:net|total)?\s*operating (?:income|revenue)|صافي\s*إيرادات\s*التشغيل|إجمالي\s+(?:الدخل|إيرادات)\s+التشغيل/i.test(lineText);
   const hasPreviousPeriod = verifiedEarlierPeriod(metric, metrics) !== null;
 
   if (language === 'ar') {
     const meaning: Record<string, string> = {
       revenue: bankOperatingRevenue
-        ? 'يشير هذا البند المصرفي إلى صافي دخل الأنشطة التشغيلية، وهو يختلف عن صافي الربح بعد المصاريف.'
+        ? 'يشير هذا البند المصرفي إلى دخل العمليات المصرفية، وهو يختلف عن مبيعات السلع وعن صافي الربح بعد المصاريف.'
         : 'تمثل الإيرادات المبالغ المسجلة من الأنشطة الرئيسية للشركة قبل الوصول إلى صافي الربح.',
       net_profit: 'صافي الربح هو ما يتبقى من الدخل بعد احتساب المصاريف والتكاليف المسجلة؛ وليس رصيداً نقدياً بحد ذاته.',
       assets: 'الأصول هي الموارد التي تملكها الشركة أو تسيطر عليها، وفقاً لما سجله التقرير.',
@@ -346,7 +352,7 @@ function educationalFallback(
 
   const meaning: Record<string, string> = {
     revenue: bankOperatingRevenue
-      ? 'For a bank, this net operating income/revenue line reflects operating activity; it is distinct from net profit after expenses.'
+      ? 'For a bank, this operating-income line reflects banking operations; it is distinct from ordinary sales revenue and net profit after expenses.'
       : 'Revenue is the amount recorded from a company’s main activities before arriving at net profit.',
     net_profit: 'Net profit is what remains after recorded income, costs, and expenses are accounted for; it is not a cash balance by itself.',
     assets: 'Assets are resources the company owns or controls, as recorded in the report.',

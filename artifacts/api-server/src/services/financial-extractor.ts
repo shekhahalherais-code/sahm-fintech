@@ -102,6 +102,11 @@ const financialLabels: Array<{
   },
 ];
 
+const incomeStatementTitlePattern =
+  /^(?:بيان\s+الدخل\s+المجمع|(?:consolidated\s+)?income\s+statement|(?:consolidated\s+)?statement\s+of\s+(?:income|profit\s+or\s+loss)(?:\s+and\s+other\s+comprehensive\s+income)?)$/i;
+const balanceStatementTitlePattern =
+  /^(?:بيان\s+المركز\s+المالي\s+المجمع|(?:consolidated\s+)?(?:statement\s+of\s+financial\s+position|balance\s+sheet))$/i;
+
 function normalizeArabicDigits(value: string): string {
   return value
     .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
@@ -192,6 +197,7 @@ function detectUnitScale(text: string): UnitScale {
   if (
     /\b(thousands?|000s|in\s+000)\b/i.test(text) ||
     /\b(?:KWD|KD|USD|BHD|SAR|AED)\s*['’`]\s*000\b/i.test(text) ||
+    /\b(?:KWD|KD|USD|BHD|SAR|AED)\s*000\s*['’`]?\s*s\b/i.test(text) ||
     /بالآلاف|بالألف|ألف/.test(text)
   ) {
     scaleMatches.add("thousands");
@@ -337,9 +343,31 @@ function detectCompanyName(lines: ReportLine[]): string | null {
     return candidate;
   }
 
-  for (const line of lines) {
+  const openingLines = lines.filter((line) => line.page <= 10);
+  for (let index = 0; index < openingLines.length; index += 1) {
+    const line = openingLines[index];
+    if (!line) continue;
+    for (let offset = 0; offset <= 2; offset += 1) {
+      const followingLines = openingLines.slice(index, index + offset + 1);
+      if (
+        followingLines.length !== offset + 1 ||
+        followingLines.some((entry) => entry.page !== line.page)
+      ) continue;
+      const combinedText = cleanLine(
+        followingLines.map((entry) => entry.text).join(" "),
+      );
+      const match = combinedText.match(
+        /^(.{3,100}?)\s+(?:and\s+(?:its\s+)?subsidiaries|و(?:الشركات|الجهات)\s+التابعة)\s*$/i,
+      );
+      if (match?.[1]) {
+        const candidate = cleanCompanyCandidate(match[1]);
+        if (candidate) return shorten(candidate);
+      }
+    }
+  }
+
+  for (const line of openingLines) {
     const { page, text } = line;
-    if (page > 10) break;
     for (const pattern of companyPatterns) {
       const match = text.match(pattern);
       if (match?.[1]) {
@@ -358,20 +386,12 @@ function detectCompanyName(lines: ReportLine[]): string | null {
     }
   }
 
-  for (const { text } of lines) {
+  for (const { text } of openingLines) {
     const groupName = text.match(
       /^(.{3,100}?)\s+(?:and\s+(?:its\s+)?subsidiaries|و(?:الشركات|الجهات)\s+التابعة)(?:\s|$)/i,
     );
     if (groupName?.[1]) {
       const candidate = cleanCompanyCandidate(groupName[1]);
-      if (candidate) return shorten(candidate);
-    }
-
-    const auditedEntity = text.match(
-      /(?:consolidated\s+financial\s+statements\s+of|shareholders\s+of)\s+(.{3,100}?)(?=\s*\(|\s+and\s+(?:its\s+)?subsidiaries\b|[,.]|$)/i,
-    );
-    if (auditedEntity?.[1]) {
-      const candidate = cleanCompanyCandidate(auditedEntity[1]);
       if (candidate) return shorten(candidate);
     }
   }
@@ -395,18 +415,21 @@ function pageText(lines: ReportLine[], page: number): string {
   );
 }
 
+function lineMatchesPattern(line: ReportLine, pattern: RegExp): boolean {
+  return (
+    pattern.test(normalizeSearchText(line.text)) ||
+    line.parts.some((part) => pattern.test(normalizeSearchText(part.text)))
+  );
+}
+
 function findStatementPage(
   lines: ReportLine[],
   titlePattern: RegExp,
+  metricPatterns: RegExp[],
 ): number | null {
   const candidatePages = [
     ...new Set(
-      lines
-        .filter((line) =>
-          line.parts.some((part) =>
-            titlePattern.test(normalizeSearchText(part.text)),
-          ),
-        )
+      lines.filter((line) => lineMatchesPattern(line, titlePattern))
         .map((line) => line.page),
     ),
   ];
@@ -420,12 +443,17 @@ function findStatementPage(
           return /^20\d{2}$/.test(year);
         }),
       );
-      const text = pageText(lines, page);
-      return (
-        hasYearColumn &&
-        detectCurrency(text) !== null &&
-        detectUnitScale(text) !== "unknown"
-      );
+      const hasFinancialRow = linesOnPage.some((line) => {
+        if (!/\d/.test(line.text)) return false;
+        return metricPatterns.some(
+          (pattern) =>
+            pattern.test(normalizeSearchText(line.text)) ||
+            line.parts.some((part) =>
+              pattern.test(normalizeSearchText(part.text)),
+            ),
+        );
+      });
+      return hasYearColumn && hasFinancialRow;
     }) ?? null
   );
 }
@@ -462,8 +490,49 @@ function findYearColumnX(
   lines: ReportLine[],
   page: number,
   year: string | null,
+  statementTitlePattern: RegExp,
 ): number | null {
-  return findYearColumnHeader(lines, page, year)?.part.x ?? null;
+  if (!year) return null;
+  const pageLines = lines.filter((line) => line.page === page);
+  const yearHeaders = pageLines.flatMap((line) =>
+    line.parts
+      .filter((part) => normalizeSearchText(part.text) === year)
+      .map((part) => ({ line, part })),
+  );
+  const pairedHeaders = yearHeaders.filter(({ line, part }) =>
+    line.parts.some(
+      (other) =>
+        other !== part &&
+        /^20\d{2}$/.test(normalizeSearchText(other.text)) &&
+        normalizeSearchText(other.text) !== year,
+    ),
+  );
+  const candidates = pairedHeaders.length > 0 ? pairedHeaders : yearHeaders;
+  if (candidates.length === 0) return null;
+
+  const headingLine = pageLines.find((line) =>
+    lineMatchesPattern(line, statementTitlePattern),
+  );
+  const headingPart = headingLine?.parts.find((part) =>
+    statementTitlePattern.test(normalizeSearchText(part.text)),
+  );
+  const headingX = headingPart?.x ?? headingLine?.parts[0]?.x;
+  if (headingX === undefined) {
+    return candidates.sort((a, b) => a.part.x - b.part.x)[0]?.part.x ?? null;
+  }
+
+  const headingText = headingPart?.text ?? headingLine?.text ?? "";
+  const isRightToLeft = /[\u0600-\u06FF]/.test(headingText);
+  const sameSide = candidates.filter(({ part }) =>
+    isRightToLeft ? part.x < headingX : part.x > headingX,
+  );
+  const preferredCandidates = sameSide.length > 0 ? sameSide : candidates;
+  return (
+    preferredCandidates.sort(
+      (a, b) =>
+        Math.abs(a.part.x - headingX) - Math.abs(b.part.x - headingX),
+    )[0]?.part.x ?? null
+  );
 }
 
 function isYearColumnRestated(
@@ -538,17 +607,24 @@ function numericClusters(line: ReportLine): Array<{ x: number; value: string }> 
   });
 }
 
-function sourceExcerptFor(
+function sourceLabelFor(
   line: ReportLine,
   definition: (typeof financialLabels)[number],
-  value: string | null,
 ): string {
   const labelPart = line.parts.find((part) =>
     definition.statementPatterns.some((pattern) =>
       pattern.test(normalizeSearchText(part.text)),
     ),
   );
-  const label = labelPart?.text.trim() || definition.label;
+  return shorten(labelPart?.text.trim() || definition.label);
+}
+
+function sourceExcerptFor(
+  line: ReportLine,
+  definition: (typeof financialLabels)[number],
+  value: string | null,
+): string {
+  const label = sourceLabelFor(line, definition);
   return shorten(value ? `${label} — ${value}` : line.text);
 }
 
@@ -612,7 +688,7 @@ function findStatementMetric(
 
   return {
     metric: {
-      label: definition.label,
+      label: sourceLabelFor(sourceLine, definition),
       category: definition.category,
       reportedValue: verified ? candidateValue : null,
       currency,
@@ -664,11 +740,26 @@ export async function extractFinancialReport(
 
     const incomeStatementPage = findStatementPage(
       lines,
-      /^(?:بيان\s+الدخل\s+المجمع|consolidated\s+(?:income\s+statement|statement\s+of\s+profit\s+or\s+loss))$/i,
+      incomeStatementTitlePattern,
+      financialLabels
+        .filter(
+          (definition) =>
+            definition.category === "revenue" ||
+            definition.category === "net_profit",
+        )
+        .flatMap((definition) => definition.statementPatterns),
     );
     const balanceStatementPage = findStatementPage(
       lines,
-      /^(?:بيان\s+المركز\s+المالي\s+المجمع|consolidated\s+(?:statement\s+of\s+financial\s+position|balance\s+sheet))$/i,
+      balanceStatementTitlePattern,
+      financialLabels
+        .filter(
+          (definition) =>
+            definition.category === "assets" ||
+            definition.category === "liabilities" ||
+            definition.category === "equity",
+        )
+        .flatMap((definition) => definition.statementPatterns),
     );
     const statementPages = [incomeStatementPage, balanceStatementPage].filter(
       (page): page is number => page !== null,
@@ -706,16 +797,24 @@ export async function extractFinancialReport(
         definition.category === "equity"
           ? balanceStatementPage
           : incomeStatementPage;
+      const isBalanceMetric =
+        definition.category === "assets" ||
+        definition.category === "liabilities" ||
+        definition.category === "equity";
+      const statementTitlePattern = isBalanceMetric
+        ? balanceStatementTitlePattern
+        : incomeStatementTitlePattern;
       const yearColumnX =
         statementPage === null
           ? null
-          : findYearColumnX(lines, statementPage, statementYear);
+          : findYearColumnX(
+              lines,
+              statementPage,
+              statementYear,
+              statementTitlePattern,
+            );
       const metricReportingPeriod =
-        definition.category === "assets" ||
-        definition.category === "liabilities" ||
-        definition.category === "equity"
-          ? balanceReportingPeriod ?? reportingPeriod
-          : reportingPeriod;
+        isBalanceMetric ? balanceReportingPeriod : reportingPeriod;
       const found =
         statementPage === null
           ? null
@@ -737,7 +836,7 @@ export async function extractFinancialReport(
         extractionNotes.push(
           `${definition.label} was found on page ${found.metric.sourcePage}, but its current-year value or required financial metadata could not be confirmed.`,
         );
-      } else if (!found) {
+      } else if (!found && statementPage !== null) {
         extractionNotes.push(
           `${definition.label} was not verified because no matching row was found on its audited financial statement page.`,
         );
@@ -771,12 +870,16 @@ export async function extractFinancialReport(
         if (statementPage === null || !statementYear) continue;
 
         const currentPeriod = isBalanceMetric
-          ? balanceReportingPeriod ?? reportingPeriod
+          ? balanceReportingPeriod
           : reportingPeriod;
+        const statementTitlePattern = isBalanceMetric
+          ? balanceStatementTitlePattern
+          : incomeStatementTitlePattern;
         const previousYearColumnX = findYearColumnX(
           lines,
           statementPage,
           previousYear,
+          statementTitlePattern,
         );
         const previousPeriodBase = currentPeriod?.replace(
           statementYear,
@@ -830,9 +933,14 @@ export async function extractFinancialReport(
         "A reporting period could not be confidently identified.",
       );
     }
-    if (!hasFinancialStatements) {
+    if (incomeStatementPage === null) {
       extractionNotes.push(
-        "Audited financial statement pages with identifiable reporting columns were not found; metrics from narrative mentions are not used.",
+        "No income-statement page with searchable text and a reporting-year column was identified; income figures remain unverified. Image-only statement pages may require OCR.",
+      );
+    }
+    if (balanceStatementPage === null) {
+      extractionNotes.push(
+        "No balance-sheet page with searchable text and a reporting-year column was identified; balance-sheet figures remain unverified. Image-only statement pages may require OCR.",
       );
     }
     if (!detectCompanyName(lines)) {

@@ -123,14 +123,32 @@ function localizedNote(note: string, language: 'en' | 'ar'): string {
     };
     return `لم يتم التحقق من ${labels[notVerified[1] ?? ''] ?? 'هذا المؤشر'} لعدم العثور على بند مطابق في صفحة القوائم المالية المدققة.`;
   }
+  const foundButUnverified = note.match(
+    /^(.+) was found on page (\d+), but its current-year value or required financial metadata could not be confirmed\.$/,
+  );
+  if (foundButUnverified) {
+    const labels: Record<string, string> = {
+      Revenue: 'الإيرادات',
+      'Net profit': 'صافي الربح',
+      'Total assets': 'إجمالي الأصول',
+      'Total liabilities': 'إجمالي الالتزامات',
+      'Total equity': 'إجمالي حقوق الملكية',
+    };
+    const label = labels[foundButUnverified[1] ?? ''] ?? 'هذا المؤشر';
+    return `ظهر ${label} في الصفحة ${foundButUnverified[2]}، لكن تعذّر تأكيد قيمة السنة الحالية أو البيانات المالية المطلوبة.`;
+  }
   const notes: Record<string, string> = {
     'Currency was not uniquely identifiable from the report text.': 'تعذّر تحديد العملة بشكل موثوق من نص التقرير.',
     "The report's unit scale could not be confirmed; values are not converted.": 'تعذّر تأكيد مقياس الوحدات؛ لم يتم تحويل القيم.',
     'A reporting period could not be confidently identified.': 'تعذّر تحديد الفترة المالية بشكل موثوق.',
     'A company name could not be confidently identified from a labeled field.': 'تعذّر تحديد اسم الشركة بشكل موثوق من حقل واضح.',
     'No supported financial metric labels were confidently identified.': 'تعذّر تحديد مؤشرات مالية مدعومة بشكل موثوق.',
+    'No income-statement page with searchable text and a reporting-year column was identified; income figures remain unverified. Image-only statement pages may require OCR.':
+      'لم يتم العثور على صفحة قائمة دخل تحتوي على نص قابل للبحث وعمود لسنة التقرير؛ لذلك تبقى أرقام الدخل غير متحقق منها. وقد تتطلب صفحات القوائم المضمنة كصور تقنية التعرّف الضوئي على الحروف (OCR).',
+    'No balance-sheet page with searchable text and a reporting-year column was identified; balance-sheet figures remain unverified. Image-only statement pages may require OCR.':
+      'لم يتم العثور على صفحة قائمة مركز مالي تحتوي على نص قابل للبحث وعمود لسنة التقرير؛ لذلك تبقى أرقام المركز المالي غير متحقق منها. وقد تتطلب صفحات القوائم المضمنة كصور تقنية التعرّف الضوئي على الحروف (OCR).',
   };
-  return notes[note] ?? note;
+  return notes[note] ?? 'لم يتم التحقق من إحدى ملاحظات الاستخراج؛ راجع المستند المصدر قبل استخدام الأرقام.';
 }
 
 function numericFromReportedText(value: string | null, currency: string | null): number | null {
@@ -168,6 +186,12 @@ export default function ReportReviewPage() {
     label: string;
     sourceExcerpt: string | null;
   }) {
+    const isBankTotalOperatingIncome =
+      metric.category === 'revenue' &&
+      /\btotal\s+operating\s+income\b|إجمالي\s+(?:الدخل|إيرادات)\s+التشغيل/i.test(metric.sourceExcerpt ?? '');
+    if (isBankTotalOperatingIncome) {
+      return language === 'ar' ? 'إجمالي الدخل التشغيلي' : 'Total operating income';
+    }
     const isBankOperatingIncome =
       metric.category === 'revenue' &&
       /صافي\s+إيرادات\s+التشغيل|\bnet\s+operating\s+income\b/i.test(metric.sourceExcerpt ?? '');
