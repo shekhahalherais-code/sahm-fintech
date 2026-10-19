@@ -103,3 +103,6 @@ test-results/
 *.log
 *.log.*
 /generated-artifacts/
+
+# Pasted prompt snapshots are workspace context, not application assets
+/attached_assets/Pasted--*
