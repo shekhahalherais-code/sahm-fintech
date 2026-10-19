@@ -122,6 +122,80 @@ export interface FinancialReport {
   createdAt: string;
 }
 
+export type FinancialReportChatHistoryItemRole = typeof FinancialReportChatHistoryItemRole[keyof typeof FinancialReportChatHistoryItemRole];
+
+
+export const FinancialReportChatHistoryItemRole = {
+  user: 'user',
+  assistant: 'assistant',
+} as const;
+
+export interface FinancialReportChatHistoryItem {
+  role: FinancialReportChatHistoryItemRole;
+  /** @maxLength 1000 */
+  content: string;
+}
+
+export interface FinancialReportChatInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  question: string;
+  /** @maxItems 8 */
+  history?: FinancialReportChatHistoryItem[];
+}
+
+export type FinancialReportChatSourceCategory = typeof FinancialReportChatSourceCategory[keyof typeof FinancialReportChatSourceCategory];
+
+
+export const FinancialReportChatSourceCategory = {
+  revenue: 'revenue',
+  net_profit: 'net_profit',
+  assets: 'assets',
+  liabilities: 'liabilities',
+  equity: 'equity',
+  other: 'other',
+} as const;
+
+export type FinancialReportChatSourceUnitScale = typeof FinancialReportChatSourceUnitScale[keyof typeof FinancialReportChatSourceUnitScale];
+
+
+export const FinancialReportChatSourceUnitScale = {
+  units: 'units',
+  thousands: 'thousands',
+  millions: 'millions',
+} as const;
+
+export interface FinancialReportChatSource {
+  category: FinancialReportChatSourceCategory;
+  label: string;
+  reportedValue: string;
+  currency: string;
+  unitScale: FinancialReportChatSourceUnitScale;
+  reportingPeriod: string;
+  /** @minimum 1 */
+  sourcePage: number;
+  sourceExcerpt: string;
+}
+
+export type FinancialReportChatResponseAnswerType = typeof FinancialReportChatResponseAnswerType[keyof typeof FinancialReportChatResponseAnswerType];
+
+
+export const FinancialReportChatResponseAnswerType = {
+  verified: 'verified',
+  not_verified: 'not_verified',
+  general: 'general',
+  advice: 'advice',
+} as const;
+
+export interface FinancialReportChatResponse {
+  answerEnglish: string;
+  answerArabic: string;
+  answerType: FinancialReportChatResponseAnswerType;
+  sources: FinancialReportChatSource[];
+}
+
 export interface ErrorResponse {
   error: string;
 }

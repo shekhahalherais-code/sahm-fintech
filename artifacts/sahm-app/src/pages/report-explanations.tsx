@@ -8,6 +8,8 @@ import {
   useGetFinancialReport,
 } from '@workspace/api-client-react';
 import { Brand } from '@/components/brand';
+import { setSahmLanguage, useSahmLanguage } from '@/lib/language';
+import { localizeReportingPeriod } from '@/lib/report-period';
 
 const copy = {
   en: {
@@ -36,7 +38,8 @@ const copy = {
     disclaimer: 'For learning only. SAHM reproduces information from the uploaded report and does not provide investment advice.',
     noItems: 'No figure-specific notes were saved for this report.',
     noMetrics: 'No figures were extracted from this report.',
-    verified: 'Verified', unverified: 'Unverified', statusUnavailable: 'Unavailable',
+    verified: 'Verified', unverified: 'Not verified', statusUnavailable: 'Not verified',
+    notVerified: 'Not verified',
   },
   ar: {
     overline: 'قراءة مبسطة', title: 'افهم تقريرك',
@@ -64,12 +67,29 @@ const copy = {
     disclaimer: 'للتثقيف فقط. يعرض سهم معلومات من التقرير المرفوع ولا يقدم نصيحة استثمارية.',
     noItems: 'لا توجد شروحات محفوظة خاصة بأرقام هذا التقرير.',
     noMetrics: 'لم يتم استخراج أرقام من هذا التقرير.',
-    verified: 'تم التحقق', unverified: 'غير متحقق', statusUnavailable: 'غير متاح',
+    verified: 'تم التحقق', unverified: 'لم يتم التحقق', statusUnavailable: 'لم يتم التحقق',
+    notVerified: 'لم يتم التحقق',
   },
 };
 
 function unavailable(value: string | null | undefined, empty: string) {
   return value ? value : empty;
+}
+
+function displayMetricLabel(
+  category: string,
+  label: string,
+  sourceExcerpt: string | null | undefined,
+  language: string,
+  fallback: string,
+) {
+  const isBankOperatingIncome =
+    category === 'revenue' &&
+    /صافي\s+إيرادات\s+التشغيل|\bnet\s+operating\s+income\b/i.test(sourceExcerpt ?? '');
+  if (isBankOperatingIncome) {
+    return language === 'ar' ? 'صافي إيرادات التشغيل' : 'Net operating income';
+  }
+  return fallback || label;
 }
 
 function hasUsableText(value: string | null | undefined): boolean {
@@ -281,7 +301,7 @@ function educationalFallback(
       assets: 'الأصول هي الموارد التي تملكها الشركة أو تسيطر عليها، وفقاً لما سجله التقرير.',
       liabilities: 'الالتزامات هي المبالغ والواجبات المالية التي تقع على الشركة تجاه الآخرين.',
       equity: 'حقوق الملكية هي الحصة المتبقية للمساهمين بعد طرح الالتزامات من الأصول.',
-      other: `اقرأ البند «${metric.label}» وفق تعريفه في التقرير؛ لا تتوفر له هنا فئة مالية مؤكدة.`,
+      other: 'اقرأ البند وفق تعريفه في التقرير؛ لا تتوفر له فئة مالية مؤكدة.',
     };
     const comparisons: Record<string, string> = {
       revenue: 'قارن هذا البند بصافي الربح والمصاريف التشغيلية إن كانت منشورة.',
@@ -308,7 +328,7 @@ function educationalFallback(
     assets: 'Assets are resources the company owns or controls, as recorded in the report.',
     liabilities: 'Liabilities are the company’s recorded financial obligations to others.',
     equity: 'Equity is the shareholders’ remaining interest after liabilities are deducted from assets.',
-    other: `Read “${metric.label}” according to the report’s definition; no confirmed category-specific meaning is available here.`,
+    other: 'Read this line item according to its definition in the report; no confirmed financial category is available here.',
   };
   const comparisons: Record<string, string> = {
     revenue: 'Compare it with net profit and operating expenses, if reported.',
@@ -328,9 +348,7 @@ function educationalFallback(
 }
 
 export default function ReportExplanationsPage() {
-  const [language, setLanguage] = useState<'en' | 'ar'>(() =>
-    typeof window !== 'undefined' && window.localStorage.getItem('sahm-language') === 'en' ? 'en' : 'ar',
-  );
+  const language = useSahmLanguage();
   const [requestedMetricIndex, setRequestedMetricIndex] = useState<number | null>(() => {
     if (typeof window === 'undefined') return null;
     const value = new URLSearchParams(window.location.search).get('metric');
@@ -353,8 +371,7 @@ export default function ReportExplanationsPage() {
 
   function toggleLanguage() {
     const next = language === 'ar' ? 'en' : 'ar';
-    setLanguage(next);
-    window.localStorage.setItem('sahm-language', next);
+    setSahmLanguage(next);
   }
   function generateGuide() {
     generate.mutate({ reportId }, {
@@ -402,7 +419,15 @@ export default function ReportExplanationsPage() {
   const rawItem = bundle?.items.find((explanation) => explanation.metricIndex === selectedIndex);
   const item = rawItem && rawItem.category === metric?.category ? rawItem : undefined;
   const sourcePage = item?.sourcePage ?? metric?.sourcePage ?? null;
-  const metricTitle = metric ? (t.metricLabels[metric.category] ?? metric.label) : '';
+  const metricTitle = metric
+    ? displayMetricLabel(
+        metric.category,
+        metric.label,
+        metric.sourceExcerpt,
+        language,
+        t.metricLabels[metric.category] ?? metric.label,
+      )
+    : '';
   const metricEligible = metric ? hasSourceEvidence(metric) : false;
   const savedMeaning = item ? (language === 'ar' ? item.meaningArabic : item.meaningEnglish) : null;
   const savedContext = item ? (language === 'ar' ? item.contextArabic : item.contextEnglish) : null;
@@ -426,8 +451,7 @@ export default function ReportExplanationsPage() {
     : metricEligible
       ? (generate.isPending || autoGenerateRequested ? t.preparingMetric : t.contextUnavailable)
       : t.evidenceUnavailable;
-  const statusLabel = metric?.verificationStatus === 'verified' ? t.verified
-    : metric?.verificationStatus === 'unverified' ? t.unverified : t.statusUnavailable;
+  const statusLabel = metric?.verificationStatus === 'verified' ? t.verified : t.unverified;
 
   return <main className="report-dashboard explanation-dashboard" dir={dir} lang={language}>
     <aside className="dashboard-rail">
@@ -450,7 +474,7 @@ export default function ReportExplanationsPage() {
       <div className="report-wrap explanation-wrap">
         <div className="report-head">
           <div><div className="report-overline">{t.overline}</div><h1 className="report-heading" data-testid="text-explanation-title">{t.title}</h1>
-            <div className="report-filename"><FileText size={14} />{report.companyName || t.report} · {report.reportingPeriod || report.originalFileName}</div>
+            <div className="report-filename"><FileText size={14} />{report.companyName || t.report} · {localizeReportingPeriod(report.reportingPeriod, language) || report.originalFileName}</div>
           </div>
           <div className="report-actions no-print">
             <button className="action-button" type="button" onClick={() => window.print()} data-testid="button-download-summary"><Download size={14} />{t.print}<Printer size={13} /></button>
@@ -501,8 +525,8 @@ export default function ReportExplanationsPage() {
                 }}
                 data-testid={`tab-metric-${index}`}
               >
-                <span className="metric-tab-label">{t.metricLabels[entry.category] ?? entry.label}</span>
-                <strong className="metric-tab-value" data-testid={`value-selected-metric-${index}`}>{unavailable(entry.reportedValue, t.unavailable)}</strong>
+                <span className="metric-tab-label">{displayMetricLabel(entry.category, entry.label, entry.sourceExcerpt, language, t.metricLabels[entry.category] ?? entry.label)}</span>
+                <strong className="metric-tab-value" data-testid={`value-selected-metric-${index}`}>{unavailable(entry.reportedValue, t.notVerified)}</strong>
                 <span className="metric-tab-meta">
                   {unavailable(entry.currency, t.unavailable)} · {t.unitScales[entry.unitScale] ?? t.unitScales.unknown}
                 </span>
@@ -513,7 +537,7 @@ export default function ReportExplanationsPage() {
               <div className="selected-metric-heading">
                 <div>
                   <div className="selected-metric-title">{metricTitle}</div>
-                  <div className="selected-metric-period">{t.period}: {unavailable(metric.reportingPeriod, t.unavailable)}</div>
+                  <div className="selected-metric-period">{t.period}: {localizeReportingPeriod(metric.reportingPeriod, language) || t.unavailable}</div>
                 </div>
                 <span className={`status-pill status-${metric.verificationStatus === 'unavailable' ? 'unavailable' : metric.verificationStatus}`} data-testid={`status-selected-metric-${selectedIndex}`}>{statusLabel}</span>
               </div>

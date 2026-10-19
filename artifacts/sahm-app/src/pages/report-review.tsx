@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -8,7 +8,10 @@ import {
 } from '@workspace/api-client-react';
 import { AlertCircle, ArrowLeft, BookOpen, ChartNoAxesCombined, Download, FileSearch, FileText, LayoutDashboard, Lightbulb, Printer, Settings2 } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import AskSahmChat from '@/components/AskSahmChat';
 import { deriveFinancialSignals, getYearOverYearComparison } from '@/lib/financial-insights';
+import { setSahmLanguage, useSahmLanguage } from '@/lib/language';
+import { localizeReportingPeriod } from '@/lib/report-period';
 
 const words = {
   en: {
@@ -16,7 +19,7 @@ const words = {
     company: 'Company', period: 'Reporting period', currency: 'Currency', scale: 'Unit scale',
     unavailable: 'Unavailable in report', metrics: 'Extracted figures', metricsSub: 'Values are shown as reported in the source document.',
     noMetrics: 'No figures could be extracted from this report.', category: 'Category', value: 'Reported value',
-    status: 'Review status', verified: 'Verified', unverified: 'Unverified', missing: 'Unavailable',
+    status: 'Review status', verified: 'Verified', unverified: 'Not verified', missing: 'Not verified',
     source: 'SOURCE EVIDENCE', page: 'Page', noSource: 'No source excerpt was available for this figure.',
     notes: 'Extraction notes', noNotes: 'No additional extraction notes were supplied.',
     disclaimer: 'SAHM displays information extracted from the uploaded document. Always check the cited source and original filing before making a financial decision.',
@@ -58,7 +61,7 @@ const words = {
     company: 'الشركة', period: 'الفترة المالية', currency: 'العملة', scale: 'مقياس الوحدة',
     unavailable: 'غير متوفر في التقرير', metrics: 'الأرقام المستخرجة', metricsSub: 'تُعرض القيم كما وردت في المستند المصدر.',
     noMetrics: 'تعذّر استخراج أرقام من هذا التقرير.', category: 'الفئة', value: 'القيمة المنشورة',
-    status: 'حالة المراجعة', verified: 'تم التحقق', unverified: 'غير متحقق', missing: 'غير متوفر',
+    status: 'حالة المراجعة', verified: 'تم التحقق', unverified: 'لم يتم التحقق', missing: 'لم يتم التحقق',
     source: 'دليل المصدر', page: 'الصفحة', noSource: 'لا يتوفر مقتطف من المصدر لهذا الرقم.',
     notes: 'ملاحظات الاستخراج', noNotes: 'لا توجد ملاحظات إضافية للاستخراج.',
     disclaimer: 'يعرض سهم المعلومات المستخرجة من المستند المرفوع. راجع المصدر المذكور والإفصاح الأصلي دائماً قبل اتخاذ أي قرار مالي.',
@@ -108,6 +111,19 @@ function localizedNote(note: string, language: 'en' | 'ar'): string {
     const label = ambiguous[1] === 'Revenue' ? 'الإيرادات' : ambiguous[1] === 'Net profit' ? 'صافي الربح' : ambiguous[1] === 'Total assets' ? 'إجمالي الأصول' : ambiguous[1] === 'Total liabilities' ? 'إجمالي الالتزامات' : 'إجمالي حقوق الملكية';
     return `ظهر ${label} مع عدة أرقام في الصفحة ${ambiguous[2]}؛ لم يتم اختيار قيمة.`;
   }
+  const notVerified = note.match(
+    /^(.+) was not verified because no matching row was found on its audited financial statement page\.$/,
+  );
+  if (notVerified) {
+    const labels: Record<string, string> = {
+      Revenue: 'الإيرادات',
+      'Net profit': 'صافي الربح',
+      'Total assets': 'إجمالي الأصول',
+      'Total liabilities': 'إجمالي الالتزامات',
+      'Total equity': 'إجمالي حقوق الملكية',
+    };
+    return `لم يتم التحقق من ${labels[notVerified[1] ?? ''] ?? 'هذا المؤشر'} لعدم العثور على بند مطابق في صفحة القوائم المالية المدققة.`;
+  }
   const notes: Record<string, string> = {
     'Currency was not uniquely identifiable from the report text.': 'تعذّر تحديد العملة بشكل موثوق من نص التقرير.',
     "The report's unit scale could not be confirmed; values are not converted.": 'تعذّر تأكيد مقياس الوحدات؛ لم يتم تحويل القيم.',
@@ -135,9 +151,7 @@ function numericFromReportedText(value: string | null, currency: string | null):
 }
 
 export default function ReportReviewPage() {
-  const [language, setLanguage] = useState<'en' | 'ar'>(() =>
-    typeof window !== 'undefined' && window.localStorage.getItem('sahm-language') === 'en' ? 'en' : 'ar',
-  );
+  const language = useSahmLanguage();
   const params = useParams<{ reportId: string }>();
   const reportId = params.reportId || '';
   const [, navigate] = useLocation();
@@ -150,10 +164,23 @@ export default function ReportReviewPage() {
   const t = words[language];
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
+  function displayMetricLabel(metric: {
+    category: string;
+    label: string;
+    sourceExcerpt: string | null;
+  }) {
+    const isBankOperatingIncome =
+      metric.category === 'revenue' &&
+      /صافي\s+إيرادات\s+التشغيل|\bnet\s+operating\s+income\b/i.test(metric.sourceExcerpt ?? '');
+    if (isBankOperatingIncome) {
+      return language === 'ar' ? 'صافي إيرادات التشغيل' : 'Net operating income';
+    }
+    return t.metricLabels[metric.category as keyof typeof t.metricLabels] ?? metric.label;
+  }
+
   function changeLanguage() {
     const next = language === 'en' ? 'ar' : 'en';
-    setLanguage(next);
-    window.localStorage.setItem('sahm-language', next);
+    setSahmLanguage(next);
   }
 
   function generateExplanations() {
@@ -214,7 +241,9 @@ export default function ReportReviewPage() {
   const signals = deriveFinancialSignals(report.metrics);
   const bankAware = /\b(bank|banking)\b|بنك|مصرف/i.test(report.companyName ?? '');
   const signalCopy = (id: string, category: string) => {
-    const label = t.metricLabels[category as keyof typeof t.metricLabels] ?? category;
+    const label = category === 'revenue' && bankAware
+      ? (language === 'ar' ? 'الدخل التشغيلي' : 'operating income')
+      : t.metricLabels[category as keyof typeof t.metricLabels] ?? category;
     if (id === 'revenue_increased') return t.signalRevenueRise;
     if (id === 'profit_increased') return t.signalProfitRise;
     if (id === 'revenue_decreased' || id === 'profit_decreased') return t.signalFall.replace('{category}', label);
@@ -262,7 +291,7 @@ export default function ReportReviewPage() {
         <section className="snapshot-banner">
           <div className="snapshot-copy"><span className="snapshot-eyebrow">{t.summaryLabel}</span><h2>{t.welcome}</h2><p>{t.welcomeSub}</p></div>
           <div className="snapshot-meta">
-            <div><span>{t.period}</span><strong>{unavailable(report.reportingPeriod, t.unavailable)}</strong></div>
+            <div><span>{t.period}</span><strong>{unavailable(localizeReportingPeriod(report.reportingPeriod, language), t.unavailable)}</strong></div>
             <div><span>{t.currency} · {t.scale}</span><strong>{[report.currency, unitLabel].filter(Boolean).join(' · ') || t.unavailable}</strong></div>
           </div>
         </section>
@@ -273,17 +302,17 @@ export default function ReportReviewPage() {
             const explanation = metric ? savedMeanings.get(metricIndex) : undefined;
             const definition = category === 'revenue' && bankAware ? t.definition.revenueBank : t.definition[category];
             const cardContent = <>
-              <div className="summary-card-top"><span className="summary-card-label">{t.metricLabels[category]}</span><span className="summary-card-icon"><ChartNoAxesCombined size={15} /></span></div>
-              <strong className="summary-card-value">{unavailable(metric?.reportedValue, t.unavailable)}</strong>
+              <div className="summary-card-top"><span className="summary-card-label">{metric ? displayMetricLabel(metric) : t.metricLabels[category]}</span><span className="summary-card-icon"><ChartNoAxesCombined size={15} /></span></div>
+              <strong className="summary-card-value">{unavailable(metric?.reportedValue, metric ? t.unverified : t.unavailable)}</strong>
               <p className="summary-card-definition" data-testid={`summary-definition-${category}`}>{explanation || definition}</p>
               <div className="summary-card-foot" data-testid={`summary-details-${category}`}>
                 {metric ? <>
                   <span>{t.currency}: {metric.currency || t.unavailable} · {t.scale}: {metric.unitScale !== 'unknown' ? t[metric.unitScale] : t.unknown}</span>
-                  <span>{t.period}: {metric.reportingPeriod || t.unavailable}</span>
+                  <span>{t.period}: {localizeReportingPeriod(metric.reportingPeriod, language) || t.unavailable}</span>
                   <span>{t.page}: {metric.sourcePage ?? t.unavailable}</span>
                   <span className={`status-pip status-${metric.verificationStatus}`} />
                   <span>{t.status}: {metric.verificationStatus === 'verified' ? t.verified : metric.verificationStatus === 'unverified' ? t.unverified : t.missing}</span>
-                  <span className="summary-yoy" data-testid={`summary-yoy-${category}`}>{t.yoy}: {comparison ? `${comparison.percentageChange === null ? comparison.direction : `${comparison.percentageChange > 0 ? '+' : ''}${comparison.percentageChange}%`} (${comparison.previousYear}–${comparison.currentYear}) · ${t.page} ${comparison.previousSourcePage}, ${comparison.currentSourcePage}` : t.insufficientComparison}</span>
+                  <span className="summary-yoy" data-testid={`summary-yoy-${category}`}>{t.yoy}: {comparison ? `${comparison.percentageChange === null ? t.direction[comparison.direction] : `${comparison.percentageChange > 0 ? '+' : ''}${comparison.percentageChange}%`} (${comparison.previousYear}–${comparison.currentYear}) · ${t.page} ${comparison.previousSourcePage}, ${comparison.currentSourcePage}` : t.insufficientComparison}</span>
                 </> : <>
                   <span>{t.currency}: {t.unavailable} · {t.scale}: {t.unavailable}</span>
                   <span>{t.period}: {t.unavailable}</span>
@@ -298,7 +327,7 @@ export default function ReportReviewPage() {
               key={category}
               href={`/reports/${encodeURIComponent(reportId)}/explanations?metric=${report.metrics.indexOf(metric)}`}
               data-testid={`summary-${category}`}
-              aria-label={`${t.metricLabels[category]} · ${t.explanations}`}
+              aria-label={`${metric ? displayMetricLabel(metric) : t.metricLabels[category]} · ${t.explanations}`}
             >{cardContent}</Link> : <article className={`summary-card summary-card-${index + 1}`} key={category} data-testid={`summary-${category}`}>{cardContent}</article>;
           })}
         </section>
@@ -325,7 +354,7 @@ export default function ReportReviewPage() {
           <div className="report-card-header"><div><div className="section-title">{t.report}</div><div className="section-kicker">{t.filename}</div></div></div>
           <div className="meta-grid">
             <Meta label={t.company} value={report.companyName} empty={t.unavailable} testId="text-company" />
-            <Meta label={t.period} value={report.reportingPeriod} empty={t.unavailable} testId="text-reporting-period" />
+            <Meta label={t.period} value={localizeReportingPeriod(report.reportingPeriod, language)} empty={t.unavailable} testId="text-reporting-period" />
             <Meta label={t.currency} value={report.currency} empty={t.unavailable} testId="text-currency" />
             <div className="meta-item" data-testid="text-unit-scale"><div className="meta-label">{t.scale}</div><div className="meta-value">{unitLabel}</div></div>
           </div>
@@ -340,14 +369,14 @@ export default function ReportReviewPage() {
             <div className="metrics-list">
               {report.metrics.map((metric, index) => {
                 const status = metric.verificationStatus;
-                const statusLabel = status === 'verified' ? t.verified : status === 'unverified' ? t.unverified : t.missing;
+                const statusLabel = status === 'verified' ? t.verified : t.unverified;
                 return <article className="metric-row" key={`${metric.label}-${index}`} data-testid={`row-metric-${index}`}>
-                  <div><div className="metric-label">{t.metricLabels[metric.category] ?? metric.label}</div><div className="metric-category">{t.category}: {t.categories[metric.category] ?? metric.category}</div></div>
+                  <div><div className="metric-label">{displayMetricLabel(metric)}</div><div className="metric-category">{t.category}: {t.categories[metric.category] ?? metric.category}</div></div>
                   <div className={`status-pill status-${status}`} data-testid={`status-metric-${index}`}>{statusLabel}</div>
-                  <div><div className="metric-value">{unavailable(metric.reportedValue, t.unavailable)}</div>
+                  <div><div className="metric-value">{unavailable(metric.reportedValue, t.unverified)}</div>
                     <div className="metric-context">{[metric.currency, metric.unitScale !== 'unknown' ? (t[metric.unitScale] ?? t.unknown) : ''].filter(Boolean).join(' · ') || t.unavailable}</div>
                   </div>
-                  <div className="metric-context">{metric.reportingPeriod || t.unavailable}</div>
+                  <div className="metric-context">{localizeReportingPeriod(metric.reportingPeriod, language) || t.unavailable}</div>
                   <div className="source-block">
                     <div className="source-top"><span>{t.source}</span><span>{t.page} {metric.sourcePage ?? t.unavailable}</span></div>
                     <div className={`source-excerpt${metric.sourceExcerpt ? '' : ' unavailable'}`}>{metric.sourceExcerpt || t.noSource}</div>
@@ -361,12 +390,12 @@ export default function ReportReviewPage() {
         <section className="report-card chart-card" aria-labelledby="chart-heading">
           <div className="report-card-header"><div><div className="section-title" id="chart-heading">{t.chartTitle}</div><div className="section-kicker">{t.chartCaption}</div></div></div>
           {chartReady ? <div className="visual-panel">
-            <p className="visual-caption">{chartGroup[0].metric.reportingPeriod} · {chartGroup[0].metric.currency} · {t[chartGroup[0].metric.unitScale]}</p>
+            <p className="visual-caption">{localizeReportingPeriod(chartGroup[0].metric.reportingPeriod, language)} · {chartGroup[0].metric.currency} · {t[chartGroup[0].metric.unitScale]}</p>
             <div className="metric-chart" role="img" aria-label={t.chartTitle}>
               {chartGroup.map(({ metric, numeric }, index) => <div className="chart-column" key={`${metric.label}-${index}`}>
                 <div className="chart-value">{metric.reportedValue}</div>
                 <div className="chart-track"><div className="chart-bar" style={{ height: `${numeric === 0 ? 0 : Math.abs(numeric) / maxMagnitude * 100}%` }} /></div>
-                <div className="chart-label">{t.metricLabels[metric.category] ?? metric.label}</div>
+                <div className="chart-label">{displayMetricLabel(metric)}</div>
                 <div className="chart-meta">{metric.sourcePage !== null ? `${t.page} ${metric.sourcePage}` : t.unavailable}</div>
               </div>)}
             </div>
@@ -384,7 +413,7 @@ export default function ReportReviewPage() {
               {explanations.items.map((item, index) => {
                 const metric = report.metrics[item.metricIndex];
                 return <article className="explanation-item" key={`${item.metricIndex}-${index}`}>
-                  <h3>{metric ? t.metricLabels[metric.category] ?? metric.label : (language === 'ar' ? 'شرح المؤشر' : 'Metric explanation')}</h3>
+                  <h3>{metric ? displayMetricLabel(metric) : (language === 'ar' ? 'شرح المؤشر' : 'Metric explanation')}</h3>
                   <p>{language === 'ar' ? item.meaningArabic : item.meaningEnglish}</p>
                   <p className="explanation-context">{language === 'ar' ? item.contextArabic : item.contextEnglish}</p>
                   <div className="metric-context">{t.page} {item.sourcePage ?? t.unavailable}</div>
@@ -409,15 +438,16 @@ export default function ReportReviewPage() {
         <section className="print-summary" aria-label={t.printTitle}>
           <h2>{t.printTitle}</h2>
           <p>{t.printSource}: {report.originalFileName}</p>
-          <p>{t.period}: {report.reportingPeriod || t.unavailable} · {t.currency}: {report.currency || t.unavailable} · {t.scale}: {unitLabel}</p>
+          <p>{t.period}: {localizeReportingPeriod(report.reportingPeriod, language) || t.unavailable} · {t.currency}: {report.currency || t.unavailable} · {t.scale}: {unitLabel}</p>
           <h3>{t.metrics}</h3>
-          {report.metrics.map((metric, index) => <p key={`${metric.label}-${index}`}>{t.metricLabels[metric.category] ?? metric.label}: {metric.reportedValue || t.unavailable} · {t.page} {metric.sourcePage ?? t.unavailable}{metric.sourceExcerpt ? ` — ${metric.sourceExcerpt}` : ''}</p>)}
+          {report.metrics.map((metric, index) => <p key={`${metric.label}-${index}`}>{displayMetricLabel(metric)}: {metric.reportedValue || t.unverified} · {t.page} {metric.sourcePage ?? t.unavailable}{metric.sourceExcerpt ? ` — ${metric.sourceExcerpt}` : ''}</p>)}
           {summary && <><h3>{t.explanations}</h3><p>{summary}</p></>}
           <p>{t.printDisclaimer}</p>
         </section>
       </div>
       <footer className="page-footer"><span className="footer-brand">SAHM · سهم</span><span>{t.source}: {report.originalFileName}</span></footer>
       </div>
+      <AskSahmChat key={reportId} reportId={reportId} language={language} />
     </main>
   );
 }

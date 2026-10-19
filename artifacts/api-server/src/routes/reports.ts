@@ -2,6 +2,9 @@ import { Router, type IRouter, type NextFunction, type Request, type Response } 
 import multer from "multer";
 import mongoose from "mongoose";
 import {
+  AskFinancialReportQuestionBody,
+  AskFinancialReportQuestionParams,
+  AskFinancialReportQuestionResponse,
   GenerateReportExplanationsParams,
   GenerateReportExplanationsResponse,
   ExtractReportResponse,
@@ -10,6 +13,7 @@ import {
 } from "@workspace/api-zod";
 import { FinancialAnalysis } from "../models/FinancialAnalysis";
 import { extractFinancialReport } from "../services/financial-extractor";
+import { answerFinancialReportQuestion } from "../services/financial-chat";
 import {
   createBilingualFinancialExplanations,
   getMissingExplanationIndexes,
@@ -267,6 +271,54 @@ router.post(
       );
       res.status(503).json({
         error: "The explanation service is temporarily unavailable. Please try again.",
+      });
+    }
+  },
+);
+
+router.post(
+  "/reports/:reportId/chat",
+  async (req, res): Promise<void> => {
+    const parsedParams = AskFinancialReportQuestionParams.safeParse(req.params);
+    if (!parsedParams.success || !mongoose.isValidObjectId(parsedParams.data.reportId)) {
+      res.status(404).json({ error: "Saved report not found." });
+      return;
+    }
+
+    const parsedBody = AskFinancialReportQuestionBody.safeParse(req.body);
+    if (!parsedBody.success) {
+      res.status(400).json({ error: "Enter a question of up to 1,000 characters." });
+      return;
+    }
+
+    try {
+      await connectMongo();
+      const saved = await FinancialAnalysis.findById(parsedParams.data.reportId).lean();
+      if (!saved) {
+        res.status(404).json({ error: "Saved report not found." });
+        return;
+      }
+
+      const response = await answerFinancialReportQuestion(
+        saved.metrics,
+        parsedBody.data.question,
+        parsedBody.data.history ?? [],
+      );
+      res.json(AskFinancialReportQuestionResponse.parse(response));
+    } catch (error) {
+      if (error instanceof MongoConfigurationError) {
+        res.status(503).json({ error: error.message });
+        return;
+      }
+      req.log.error(
+        {
+          reportId: parsedParams.data.reportId,
+          ...safeExplanationErrorFields(error),
+        },
+        "Could not answer financial report question",
+      );
+      res.status(503).json({
+        error: "The report chat is temporarily unavailable. Please try again.",
       });
     }
   },

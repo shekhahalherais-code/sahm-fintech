@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useExtractReport } from '@workspace/api-client-react';
 import { ArrowRight, FileText, LockKeyhole, X, UploadCloud } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { setSahmLanguage, useSahmLanguage } from '@/lib/language';
 
 const copy = {
   en: {
@@ -46,11 +47,7 @@ function formatSize(size: number) {
 }
 
 export default function HomePage() {
-  const [language, setLanguage] = useState<'en' | 'ar'>(() => {
-    if (typeof window === 'undefined') return 'ar';
-    const savedLanguage = window.localStorage.getItem('sahm-language');
-    return savedLanguage === 'en' || savedLanguage === 'ar' ? savedLanguage : 'ar';
-  });
+  const language = useSahmLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
@@ -68,8 +65,7 @@ export default function HomePage() {
   }
   function changeLanguage() {
     const next = language === 'en' ? 'ar' : 'en';
-    setLanguage(next);
-    window.localStorage.setItem('sahm-language', next);
+    setSahmLanguage(next);
   }
   function onInput(event: ChangeEvent<HTMLInputElement>) { chooseFile(event.target.files?.[0]); event.target.value = ''; }
   function onDrop(event: DragEvent<HTMLLabelElement>) {

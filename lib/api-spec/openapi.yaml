@@ -116,6 +116,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /reports/{reportId}/chat:
+    post:
+      operationId: askFinancialReportQuestion
+      tags: [reports]
+      summary: Ask a bilingual, source-grounded question about a saved report
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialReportChatInput"
+      responses:
+        "200":
+          description: Bilingual answer with citations from verified report metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialReportChatResponse"
+        "400":
+          description: Invalid report question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Chat service is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -252,6 +294,67 @@ components:
         generatedAt:
           type: string
           format: date-time
+    FinancialReportChatHistoryItem:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+          maxLength: 1000
+    FinancialReportChatInput:
+      type: object
+      required: [question]
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        history:
+          type: array
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/FinancialReportChatHistoryItem"
+    FinancialReportChatSource:
+      type: object
+      required: [category, label, reportedValue, currency, unitScale, reportingPeriod, sourcePage, sourceExcerpt]
+      properties:
+        category:
+          type: string
+          enum: [revenue, net_profit, assets, liabilities, equity, other]
+        label:
+          type: string
+        reportedValue:
+          type: string
+        currency:
+          type: string
+        unitScale:
+          type: string
+          enum: [units, thousands, millions]
+        reportingPeriod:
+          type: string
+        sourcePage:
+          type: integer
+          minimum: 1
+        sourceExcerpt:
+          type: string
+    FinancialReportChatResponse:
+      type: object
+      required: [answerEnglish, answerArabic, answerType, sources]
+      properties:
+        answerEnglish:
+          type: string
+        answerArabic:
+          type: string
+        answerType:
+          type: string
+          enum: [verified, not_verified, general, advice]
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialReportChatSource"
     ErrorResponse:
       type: object
       required: [error]

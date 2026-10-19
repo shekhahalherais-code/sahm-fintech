@@ -23,6 +23,8 @@ import type {
   BilingualExplanationBundle,
   ErrorResponse,
   FinancialReport,
+  FinancialReportChatInput,
+  FinancialReportChatResponse,
   HealthStatus,
   ReportUploadInput
 } from './api.schemas';
@@ -357,5 +359,94 @@ export const useGenerateReportExplanations = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getGenerateReportExplanationsMutationOptions(options));
+    }
+
+export const getAskFinancialReportQuestionUrl = (reportId: string,) => {
+
+
+
+
+  return `/api/reports/${reportId}/chat`
+}
+
+/**
+ * @summary Ask a bilingual, source-grounded question about a saved report
+ */
+export const askFinancialReportQuestion = async (reportId: string,
+    financialReportChatInput: FinancialReportChatInput, options?: Parameters<typeof customFetch>[1]): Promise<FinancialReportChatResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<FinancialReportChatResponse>(getAskFinancialReportQuestionUrl(reportId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(financialReportChatInput)
+  }
+);}
+
+
+
+
+
+export const getAskFinancialReportQuestionMutationKey = () => ['askFinancialReportQuestion'] as const;
+
+export const getAskFinancialReportQuestionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof askFinancialReportQuestion>>, TError,AskFinancialReportQuestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof askFinancialReportQuestion>>, TError,AskFinancialReportQuestionMutationVariables, TContext> => {
+
+const mutationKey = getAskFinancialReportQuestionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof askFinancialReportQuestion>>, AskFinancialReportQuestionMutationVariables> = (props) => {
+          const {reportId,data} = props ?? {};
+
+          return  askFinancialReportQuestion(reportId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AskFinancialReportQuestionMutationResult = NonNullable<Awaited<ReturnType<typeof askFinancialReportQuestion>>>
+    export type AskFinancialReportQuestionMutationBody = BodyType<FinancialReportChatInput>
+    export type AskFinancialReportQuestionMutationError = ErrorType<ErrorResponse>
+    export type AskFinancialReportQuestionMutationVariables = {reportId: string;data: BodyType<FinancialReportChatInput>}
+
+    /**
+ * @summary Ask a bilingual, source-grounded question about a saved report
+ */
+export const useAskFinancialReportQuestion = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof askFinancialReportQuestion>>, TError,AskFinancialReportQuestionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof askFinancialReportQuestion>>,
+        TError,
+        AskFinancialReportQuestionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAskFinancialReportQuestionMutationOptions(options));
     }
 

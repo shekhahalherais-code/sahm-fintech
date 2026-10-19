@@ -140,3 +140,46 @@ export const GenerateReportExplanationsResponse = zod.object({
 })
 
 
+/**
+ * @summary Ask a bilingual, source-grounded question about a saved report
+ */
+export const AskFinancialReportQuestionParams = zod.object({
+  "reportId": zod.coerce.string()
+})
+
+export const askFinancialReportQuestionBodyQuestionMax = 1000;
+
+export const askFinancialReportQuestionBodyHistoryItemContentMax = 1000;
+
+export const askFinancialReportQuestionBodyHistoryMax = 8;
+
+
+
+export const AskFinancialReportQuestionBody = zod.object({
+  "question": zod.string().min(1).max(askFinancialReportQuestionBodyQuestionMax),
+  "history": zod.array(zod.object({
+  "role": zod.enum(['user', 'assistant']),
+  "content": zod.string().max(askFinancialReportQuestionBodyHistoryItemContentMax)
+})).max(askFinancialReportQuestionBodyHistoryMax).optional()
+})
+
+
+
+
+export const AskFinancialReportQuestionResponse = zod.object({
+  "answerEnglish": zod.string(),
+  "answerArabic": zod.string(),
+  "answerType": zod.enum(['verified', 'not_verified', 'general', 'advice']),
+  "sources": zod.array(zod.object({
+  "category": zod.enum(['revenue', 'net_profit', 'assets', 'liabilities', 'equity', 'other']),
+  "label": zod.string(),
+  "reportedValue": zod.string(),
+  "currency": zod.string(),
+  "unitScale": zod.enum(['units', 'thousands', 'millions']),
+  "reportingPeriod": zod.string(),
+  "sourcePage": zod.number().int().min(1),
+  "sourceExcerpt": zod.string()
+}))
+})
+
+
