@@ -25,7 +25,7 @@ const categoryTerms: Array<{
   {
     category: "net_profit",
     pattern:
-      /\b(?:net profit|profit for the year|net income|earnings|profit)\b|صافي الربح|ربح السنة|الأرباح الصافية|الأرباح|الربح/i,
+      /\b(?:net profit|profit for the year|net income|earnings|profit)\b|صافي\s+(?:ال)?ربح|ربح السنة|الأرباح الصافية|الأرباح|الربح/i,
   },
   {
     category: "assets",
@@ -76,17 +76,6 @@ function asksForInvestmentAdvice(question: string): boolean {
       question,
     ) ||
     /هل\s*(?:أشتري|اشتري|أبيع|ابيع|أستثمر|استثمر)|تنصح(?:ني)?\s*(?:بشراء|ببيع|بالاستثمار)|هل\s*(?:هذا|السهم|الشركة)\s*(?:استثمار|مناسب)|(?:مناسب|جيد)\s*للاستثمار|توقعات?\s*(?:السهم|السعر)|أفضل\s*(?:الأسهم|الأسهم|الأسهم الكويتية|الاستثمارات)|أحسن\s*الأسهم/i.test(
-      question,
-    )
-  );
-}
-
-function isGeneralEducationQuestion(question: string): boolean {
-  return (
-    /\b(?:what (?:is|are|does)|how (?:do i|can i|does)|explain|define|definition|difference between|meaning of|tell me about|can you explain|give me a simple explanation)\b/i.test(
-      question,
-    ) ||
-    /ما\s+(?:هي|هو|الفرق|معنى)|كيف\s+(?:أقرأ|اقرأ|أفهم|افهم|تعمل|يعمل|يمكنني)|اشرح|تعريف|ماذا\s+يعني|حدثني\s+عن|أعطني\s+شرح/i.test(
       question,
     )
   );
@@ -253,8 +242,7 @@ export async function answerFinancialReportQuestion(
     !reportSelected &&
     (
       asksForSpecificReportData(question) ||
-      asksForLiveMarketData(question) ||
-      !isGeneralEducationQuestion(question)
+      asksForLiveMarketData(question)
     )
   ) {
     return noReportDataResponse();
@@ -319,10 +307,10 @@ export async function answerFinancialReportQuestion(
         role: "system",
         content: [
           "You are Ask SAHM AI, a concise financial-literacy assistant for beginners.",
-          "Return both answerEnglish and answerArabic in clear, natural English and Modern Standard Arabic.",
+          "Return both answerEnglish and answerArabic in clear, natural English and Arabic. When the user writes in Kuwaiti Arabic, understand the dialect and answerArabic naturally in Kuwaiti Arabic; otherwise use clear Modern Standard Arabic.",
           reportSelected
             ? "For report-specific claims, use only verifiedEvidence. The unverifiedMetrics list indicates missing or unverified data; never turn it into a value."
-            : "No report is selected. Answer only general beginner-friendly questions about financial terminology, reading financial reports, basic investment concepts, and the general purpose of Boursa Kuwait. Do not claim company or report facts, give current market data, prices, trading hours, or cite any source page. If the question requires such information, answerType must be not_verified and state that no report or live market feed is available.",
+            : "No report is selected. For a general educational question, answer directly and do not mention report availability. Answer only beginner-friendly questions about financial terminology, reading financial reports, basic investment concepts, and the general purpose of Boursa Kuwait. Do not claim company or report facts, give current market data, prices, trading hours, or cite any source page. If the question requires such information, answerType must be not_verified and state that the required report or live market context is missing.",
           reportSelected
             ? "Do not use outside knowledge to make claims about this company or report. If the report evidence does not answer the question, answerType must be not_verified and say what is missing."
             : "For general educational definitions, answerType must be general. Never invent a report value, company fact, current market fact, or source reference.",
