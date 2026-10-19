@@ -82,7 +82,7 @@ function fullYear(period: string | null): number | null {
     )
   ) return null;
   if (
-    !/\b(?:year\s+ended|year\s+ending|for\s+the\s+year|financial\s+year|fiscal\s+year|annual|fy\s*[-:/]?\s*(?:19|20)\d{2})\b|السنة\s+المنتهية|السنة\s+المالية|للسنة\s+المنتهية|للسنة\s+المالية|عن\s+السنة/i.test(
+    !/\b(?:year\s+ended|year\s+ending|for\s+the\s+year|financial\s+year|fiscal\s+year|annual|fy\s*[-:/]?\s*(?:19|20)\d{2}|as\s+(?:at|of))\b|السنة\s+المنتهية|السنة\s+المالية|للسنة\s+المنتهية|للسنة\s+المالية|عن\s+السنة|كما\s+في/i.test(
       normalized,
     )
   ) return null;

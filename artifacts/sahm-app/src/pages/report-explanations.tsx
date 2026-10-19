@@ -35,7 +35,7 @@ const copy = {
     retry: 'Try again', missing: 'This report could not be found.',
     generateError: 'AI explanations could not be saved. A general educational fallback is shown below; it is not a company-specific conclusion. Retry to prepare the report-specific interpretation.',
     fallbackLabel: 'Educational fallback — not a company-specific conclusion:',
-    disclaimer: 'For learning only. SAHM reproduces information from the uploaded report and does not provide investment advice.',
+    disclaimer: 'This information is for educational purposes only and does not constitute investment advice. SAHM reproduces information from the uploaded report.',
     noItems: 'No figure-specific notes were saved for this report.',
     noMetrics: 'No figures were extracted from this report.',
     verified: 'Verified', unverified: 'Not verified', statusUnavailable: 'Not verified',
@@ -64,7 +64,7 @@ const copy = {
     retry: 'حاول مرة أخرى', missing: 'لم يتم العثور على هذا التقرير.',
     generateError: 'تعذّر حفظ شروحات الذكاء الاصطناعي. تظهر أدناه ملاحظة تعليمية عامة وليست استنتاجاً خاصاً بالشركة. حاول مرة أخرى لإعداد قراءة خاصة بالتقرير.',
     fallbackLabel: 'ملاحظة تعليمية عامة، وليست استنتاجاً خاصاً بالشركة:',
-    disclaimer: 'للتثقيف فقط. يعرض سهم معلومات من التقرير المرفوع ولا يقدم نصيحة استثمارية.',
+    disclaimer: 'المعلومات المقدمة لأغراض تعليمية فقط، ولا تُعد توصية استثمارية. يعرض سهم معلومات من التقرير المرفوع.',
     noItems: 'لا توجد شروحات محفوظة خاصة بأرقام هذا التقرير.',
     noMetrics: 'لم يتم استخراج أرقام من هذا التقرير.',
     verified: 'تم التحقق', unverified: 'لم يتم التحقق', statusUnavailable: 'لم يتم التحقق',
@@ -192,8 +192,30 @@ type FallbackMetric = {
 };
 
 function reportingYear(period: string | null): number | null {
-  const years = period?.match(/(?:19|20)\d{2}/g);
+  if (!period) return null;
+  const normalized = normalizeDigits(period).toLowerCase();
+  if (
+    /\b(?:q[1-4]|quarter(?:ly)?|interim|half[-\s]?year|six[-\s]?months?)\b|ربع|نصف\s*(?:السنة|سنوي)/i.test(
+      normalized,
+    )
+  ) return null;
+  if (
+    !/\b(?:year\s+ended|year\s+ending|for\s+the\s+year|financial\s+year|fiscal\s+year|annual|as\s+(?:at|of))\b|السنة\s+المنتهية|السنة\s+المالية|للسنة\s+المنتهية|للسنة\s+المالية|عن\s+السنة|كما\s+في/i.test(
+      normalized,
+    )
+  ) return null;
+  const years = normalized.match(/(?:19|20)\d{2}/g);
   return years?.length ? Number(years[years.length - 1]) : null;
+}
+
+function reportingPeriodSignature(period: string | null): string | null {
+  const year = reportingYear(period);
+  if (year === null || !period) return null;
+  return normalizeDigits(period)
+    .toLowerCase()
+    .replace(String(year), '{year}')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
 }
 
 function parseReportedNumber(value: string | null): number | null {
@@ -212,8 +234,10 @@ function parseReportedNumber(value: string | null): number | null {
 
 function verifiedEarlierPeriod(metric: FallbackMetric, metrics: FallbackMetric[]): FallbackMetric | null {
   const currentYear = reportingYear(metric.reportingPeriod);
+  const currentSignature = reportingPeriodSignature(metric.reportingPeriod);
   if (
     currentYear === null ||
+    !currentSignature ||
     metric.verificationStatus !== 'verified' ||
     !metric.currency ||
     metric.unitScale === 'unknown' ||
@@ -229,8 +253,8 @@ function verifiedEarlierPeriod(metric: FallbackMetric, metrics: FallbackMetric[]
         && candidate.currency === metric.currency
         && candidate.unitScale !== 'unknown'
         && candidate.unitScale === metric.unitScale
-        && candidateYear !== null
-        && candidateYear < currentYear
+        && candidateYear === currentYear - 1
+        && reportingPeriodSignature(candidate.reportingPeriod) === currentSignature
         && parseReportedNumber(candidate.reportedValue) !== null;
     })
     .sort((left, right) => (reportingYear(right.reportingPeriod) ?? 0) - (reportingYear(left.reportingPeriod) ?? 0))[0] ?? null;

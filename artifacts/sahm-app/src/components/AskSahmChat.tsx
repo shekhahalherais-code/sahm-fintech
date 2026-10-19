@@ -27,7 +27,7 @@ const copy = {
     reportSubtitle: 'A guide to this report',
     generalSubtitle: 'Financial learning, clearly explained',
     sourceFirst: 'Answers grounded in this report',
-    generalFirst: 'General financial education · no report selected',
+    generalFirst: 'General financial education',
     hello: 'What would you like to understand?',
     helloDetail: 'Ask about a figure, a reporting period, or where something appears in the report.',
     homeWelcome: "Hi! I'm SAHM 👋 What would you like to learn about financial reports or investing in Kuwait?",
@@ -68,7 +68,7 @@ const copy = {
     reportSubtitle: 'دليل لفهم هذا التقرير',
     generalSubtitle: 'تعلم مالي مبسّط',
     sourceFirst: 'إجابات تستند إلى هذا التقرير',
-    generalFirst: 'تثقيف مالي عام · لا يوجد تقرير محدد',
+    generalFirst: 'تثقيف مالي عام',
     hello: 'ما الذي تود فهمه؟',
     helloDetail: 'اسأل عن رقم أو فترة مالية أو موضع معلومة في التقرير.',
     homeWelcome: 'هلا! أنا سهم 👋 شنو ودك تعرف عن التقارير المالية أو الاستثمار في بورصة الكويت؟',
@@ -286,7 +286,7 @@ export default function AskSahmChat({ reportId, language }: Props) {
               <X size={17} aria-hidden="true" />
             </button>
           </header>
-          <div className="sahm-chat-trust"><span className="sahm-chat-trust-dot" />{t.sourceFirst}</div>
+          <div className="sahm-chat-trust"><span className="sahm-chat-trust-dot" />{reportId ? t.sourceFirst : t.generalFirst}</div>
 
           <div className="sahm-chat-messages" ref={messagesRef} aria-live="polite" aria-relevant="additions text">
             {messages.length === 0 && (

@@ -658,6 +658,50 @@ export async function extractFinancialReport(
         }
       );
     });
+    const currentYearNumber = statementYear ? Number(statementYear) : Number.NaN;
+    if (Number.isInteger(currentYearNumber)) {
+      const previousYear = String(currentYearNumber - 1);
+      const previousMetrics: ExtractedMetric[] = [];
+      for (const definition of financialLabels) {
+        const isBalanceMetric =
+          definition.category === "assets" ||
+          definition.category === "liabilities" ||
+          definition.category === "equity";
+        const statementPage = isBalanceMetric
+          ? balanceStatementPage
+          : incomeStatementPage;
+        if (statementPage === null || !statementYear) continue;
+
+        const currentPeriod = isBalanceMetric
+          ? balanceReportingPeriod ?? reportingPeriod
+          : reportingPeriod;
+        const previousPeriod = currentPeriod?.replace(statementYear, previousYear);
+        const previousYearColumnX = findYearColumnX(
+          lines,
+          statementPage,
+          previousYear,
+        );
+        if (
+          !currentPeriod ||
+          !previousPeriod ||
+          previousPeriod === currentPeriod ||
+          previousYearColumnX === null
+        ) continue;
+
+        const found = findStatementMetric(
+          lines,
+          statementPage,
+          previousYear,
+          previousYearColumnX,
+          definition,
+          currency,
+          unitScale,
+          previousPeriod,
+        );
+        if (found) previousMetrics.push(found.metric);
+      }
+      metrics.push(...previousMetrics);
+    }
 
     if (!currency) {
       extractionNotes.push(

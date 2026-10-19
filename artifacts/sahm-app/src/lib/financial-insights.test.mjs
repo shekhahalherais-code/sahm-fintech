@@ -43,6 +43,27 @@ test("calculates a YoY change only for sourced, verified, matching annual metric
   });
 });
 
+test("compares matching as-at balance-sheet periods and rejects mismatched dates", () => {
+  const metrics = [
+    metric({ label: "Total assets", category: "assets", reportedValue: "100", reportingPeriod: "as at 31 December 2024", sourcePage: 20 }),
+    metric({ label: "Total liabilities", category: "liabilities", reportedValue: "80", reportingPeriod: "as at 31 December 2024", sourcePage: 21 }),
+    metric({ label: "Total assets", category: "assets", reportedValue: "110", reportingPeriod: "as at 31 December 2025", sourcePage: 22 }),
+    metric({ label: "Total liabilities", category: "liabilities", reportedValue: "90", reportingPeriod: "as at 31 December 2025", sourcePage: 23 }),
+  ];
+  assert.deepEqual(getYearOverYearComparison(metrics, 2), {
+    currentYear: 2025,
+    previousYear: 2024,
+    direction: "increased",
+    percentageChange: 10,
+    currentSourcePage: 22,
+    previousSourcePage: 20,
+  });
+  assert.equal(getYearOverYearComparison([
+    metrics[0],
+    metric({ label: "Total assets", category: "assets", reportedValue: "110", reportingPeriod: "as at 30 June 2025", sourcePage: 22 }),
+  ], 1), null);
+});
+
 test("rejects comparisons across mismatched units, currencies, incomplete evidence, and non-adjacent years", () => {
   const current = metric({ reportingPeriod: "For the year ended 31 December 2025" });
   assert.equal(getYearOverYearComparison([

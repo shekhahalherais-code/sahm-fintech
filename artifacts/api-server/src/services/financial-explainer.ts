@@ -88,8 +88,30 @@ type VerifiedPeriodComparison = {
 };
 
 function periodYear(period: string | null): number | null {
-  const years = period?.match(/(?:19|20)\d{2}/g);
+  if (!period) return null;
+  const normalized = normalizeDigits(period).toLowerCase();
+  if (
+    /\b(?:q[1-4]|quarter(?:ly)?|interim|half[-\s]?year|six[-\s]?months?)\b|ربع|نصف\s*(?:السنة|سنوي)/i.test(
+      normalized,
+    )
+  ) return null;
+  if (
+    !/\b(?:year\s+ended|year\s+ending|for\s+the\s+year|financial\s+year|fiscal\s+year|annual|as\s+(?:at|of))\b|السنة\s+المنتهية|السنة\s+المالية|للسنة\s+المنتهية|للسنة\s+المالية|عن\s+السنة|كما\s+في/i.test(
+      normalized,
+    )
+  ) return null;
+  const years = normalized.match(/(?:19|20)\d{2}/g);
   return years?.length ? Number(years[years.length - 1]) : null;
+}
+
+function periodSignature(period: string | null): string | null {
+  const year = periodYear(period);
+  if (year === null || !period) return null;
+  return normalizeDigits(period)
+    .toLowerCase()
+    .replace(String(year), "{year}")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 }
 
 function parseReportedNumber(value: string | null): number | null {
@@ -118,8 +140,9 @@ function findVerifiedPeriodComparison(
     current.unitScale === "unknown"
   ) return null;
   const currentYear = periodYear(current.reportingPeriod);
+  const currentSignature = periodSignature(current.reportingPeriod);
   const currentAmount = parseReportedNumber(current.reportedValue);
-  if (currentYear === null || currentAmount === null) return null;
+  if (currentYear === null || !currentSignature || currentAmount === null) return null;
 
   const previous = metrics
     .map((metric) => ({ metric, year: periodYear(metric.reportingPeriod) }))
@@ -133,8 +156,8 @@ function findVerifiedPeriodComparison(
       metric.unitScale === current.unitScale &&
       metric.sourcePage !== null &&
       metric.sourceExcerpt?.trim() &&
-      year !== null &&
-      year < currentYear &&
+      year === currentYear - 1 &&
+      periodSignature(metric.reportingPeriod) === currentSignature &&
       parseReportedNumber(metric.reportedValue) !== null,
     )
     .sort((left, right) => (right.year ?? 0) - (left.year ?? 0))[0];
@@ -363,7 +386,7 @@ export async function createBilingualFinancialExplanations(
 
   const completion = await openai.chat.completions.create({
     model: "gpt-5.6-luna",
-    max_completion_tokens: 1800,
+    max_completion_tokens: 3600,
     response_format: { type: "json_object" },
     messages: [
       {
@@ -372,9 +395,9 @@ export async function createBilingualFinancialExplanations(
           "You are SAHM, a financial-literacy explainer for beginners.",
           "Write two concise, distinct fields for each metric in English and Modern Standard Arabic. The meaning field defines the exact reported line item in plain language. The investor interpretation should be one to three short sentences.",
           "In the investor interpretation, explain what the metric can indicate, what an increase or decrease could mean only as a possibility, which other relevant metrics should be examined, and whether the supplied verified data is sufficient.",
-          "Use a prior-period comparison only when previousPeriodComparison is supplied for the same verified category, currency, and unit scale. The supplied direction is the observed change; explain its significance only as a possibility, never as a proven cause or automatically good/bad result.",
-          "Use the supplied percentageChange exactly when it is non-null; do not recalculate it. When no comparison or percentage is supplied, do not claim an actual increase/decrease or produce a percentage or growth claim. State that the saved verified figures do not establish a trend, and explain what comparison would help.",
-          "Do not repeat the PDF filename, page number, reporting year, or extracted value in either explanation field; those details appear in the separate source-reference section. A computed percentage is allowed only when supplied.",
+          "Use a prior-period comparison only when previousPeriodComparison is supplied for the same verified category, currency, unit scale, and matching reporting period. The supplied direction is the observed change; explain its significance only as a possibility, never as a proven cause or automatically good/bad result.",
+          "When a verified comparison is supplied, describe its direction in words only. Never calculate or state a percentage. When no comparison is supplied, do not claim an actual increase/decrease or trend; say that the saved verified figures do not establish a trend and explain what comparison would help.",
+          "Do not repeat the PDF filename, page number, reporting year, extracted value, or any percentage in either explanation field; those details appear separately in the dashboard and source-reference section.",
           "For each meaning, explain the financial term simply. For banks, distinguish net operating income/revenue from ordinary sales revenue and from net profit.",
           "Basic accounting definitions are allowed, but do not introduce company-specific facts absent from the report.",
           "Do not judge whether a result is good or bad, infer causes, introduce benchmarks, or add facts absent from the input.",

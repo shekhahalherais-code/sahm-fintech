@@ -47,3 +47,59 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local environment files and credentials
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+.envrc
+.npmrc.local
+.npmrc.*.local
+.netrc
+.pypirc
+.docker/config.json
+
+# Private keys and local credential stores
+*.pem
+*.key
+*.p12
+*.pfx
+*.p7b
+*.p7c
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+credentials/
+**/credentials/
+secrets/
+**/secrets/
+credentials*.json
+**/credentials*.json
+secrets*.json
+**/secrets*.json
+*service-account*.json
+**/*service-account*.json
+
+# Local databases, dumps, and backups
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+/mongo-data/
+/data/db/
+/dump/
+/dumps/
+
+# Generated tool output and logs
+.vite/
+.next/
+playwright-report/
+test-results/
+*.log
+*.log.*
+/generated-artifacts/
