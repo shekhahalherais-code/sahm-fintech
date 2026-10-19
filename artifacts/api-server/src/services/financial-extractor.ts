@@ -121,7 +121,7 @@ function shorten(value: string): string {
 }
 
 function linesFromTextContent(items: unknown[], page: number): ReportLine[] {
-  const rows = new Map<number, PositionedTextPart[]>();
+  const positionedParts: Array<{ y: number; part: PositionedTextPart }> = [];
   let fallbackIndex = 0;
 
   for (const item of items) {
@@ -133,29 +133,38 @@ function linesFromTextContent(items: unknown[], page: number): ReportLine[] {
     const transform = textItem.transform;
     const x = typeof transform?.[4] === "number" ? transform[4] : fallbackIndex;
     const y = typeof transform?.[5] === "number" ? transform[5] : -fallbackIndex;
-    const rowKey = Math.round(y / 2);
-    const row = rows.get(rowKey) ?? [];
-    row.push({
-      x,
-      width: typeof textItem.width === "number" ? textItem.width : 0,
-      text,
+    positionedParts.push({
+      y,
+      part: {
+        x,
+        width: typeof textItem.width === "number" ? textItem.width : 0,
+        text,
+      },
     });
-    rows.set(rowKey, row);
     fallbackIndex += 1;
   }
 
-  return [...rows.entries()]
-    .sort(([a], [b]) => b - a)
-    .map(([rowKey, row]) => ({
-      page,
-      y: rowKey * 2,
-      parts: row.sort((a, b) => a.x - b.x),
-      text: cleanLine(
-        row
-          .map((part) => part.text)
-          .join(" "),
-      ),
-    }))
+  positionedParts.sort((a, b) => b.y - a.y || a.part.x - b.part.x);
+  const rows: Array<{ anchorY: number; parts: PositionedTextPart[] }> = [];
+  for (const { y, part } of positionedParts) {
+    const row = rows.at(-1);
+    if (row && Math.abs(row.anchorY - y) <= 2) {
+      row.parts.push(part);
+    } else {
+      rows.push({ anchorY: y, parts: [part] });
+    }
+  }
+
+  return rows
+    .map(({ anchorY, parts }) => {
+      const sortedParts = parts.sort((a, b) => a.x - b.x);
+      return {
+        page,
+        y: anchorY,
+        parts: sortedParts,
+        text: cleanLine(sortedParts.map((part) => part.text).join(" ")),
+      };
+    })
     .filter((line) => line.text.length > 0);
 }
 
@@ -301,28 +310,71 @@ function detectCompanyName(lines: ReportLine[]): string | null {
     /(?:company\s+name|name\s+of\s+the\s+company)\s*[:：-]\s*(.{3,100})/i,
     /(?:اسم\s+الشركة|اسم\s+الشركه)\s*[:：-]\s*(.{3,100})/,
   ];
-  for (const { page, text } of lines) {
+
+  const titlePatterns = [
+    /^(.{3,100}?)\s*\|\s*(?:annual\s+report(?:\s+20\d{2})?|التقرير\s+السنوي)\s*$/i,
+    /^(.{3,100}?)\s*(?:[-–—:]\s*)?annual\s+report(?:\s+20\d{2})?\s*$/i,
+    /^(.{3,100}?)\s+التقرير\s+السنوي(?:\s+20\d{2})?\s*$/i,
+    /^(?:20\d{2}\s+)?التقرير\s+السنوي\s+(.{3,100}?)\s*$/i,
+  ];
+
+  function cleanCompanyCandidate(value: string): string | null {
+    const candidate = cleanLine(value)
+      .replace(/^\d+\s+/, "")
+      .replace(/\s+\d{1,4}$/, "")
+      .replace(/\s*['’]s$/i, "")
+      .replace(/\s*(?:\||[-–—:])\s*$/, "")
+      .trim();
+    if (
+      candidate.length < 3 ||
+      candidate.length > 100 ||
+      /^(?:19|20)\d{2}$/.test(candidate) ||
+      /^\d[\d\s,.-]*$/.test(candidate) ||
+      /^(?:annual\s+report|financial\s+statements|consolidated|التقرير\s+السنوي)$/i.test(candidate)
+    ) {
+      return null;
+    }
+    return candidate;
+  }
+
+  for (const line of lines) {
+    const { page, text } = line;
     if (page > 10) break;
-    if (/بنك\s+الكويت\s+الوطني/.test(text)) {
-      return "بنك الكويت الوطني";
-    }
-    if (/national\s+bank\s+of\s+kuwait/i.test(text)) {
-      return "National Bank of Kuwait";
-    }
     for (const pattern of companyPatterns) {
       const match = text.match(pattern);
-      if (match?.[1]) return shorten(match[1]);
+      if (match?.[1]) {
+        const candidate = cleanCompanyCandidate(match[1]);
+        if (candidate) return shorten(candidate);
+      }
+    }
+
+    for (const part of [...line.parts.map(({ text: partText }) => partText), text]) {
+      for (const pattern of titlePatterns) {
+        const match = cleanLine(part).match(pattern);
+        if (!match?.[1]) continue;
+        const candidate = cleanCompanyCandidate(match[1]);
+        if (candidate) return shorten(candidate);
+      }
     }
   }
 
-  const auditedText = lines
-    .filter((line) => line.page >= 100 && line.page <= 120)
-    .map((line) => line.text)
-    .join(" ");
-  const auditedEntity = auditedText.match(
-    /to\s+the\s+shareholders\s+of\s+(.{3,100}?)\s+and\s+its\s+subsidiaries/i,
-  );
-  if (auditedEntity?.[1]) return shorten(auditedEntity[1]);
+  for (const { text } of lines) {
+    const groupName = text.match(
+      /^(.{3,100}?)\s+(?:and\s+(?:its\s+)?subsidiaries|و(?:الشركات|الجهات)\s+التابعة)(?:\s|$)/i,
+    );
+    if (groupName?.[1]) {
+      const candidate = cleanCompanyCandidate(groupName[1]);
+      if (candidate) return shorten(candidate);
+    }
+
+    const auditedEntity = text.match(
+      /(?:consolidated\s+financial\s+statements\s+of|shareholders\s+of)\s+(.{3,100}?)(?=\s*\(|\s+and\s+(?:its\s+)?subsidiaries\b|[,.]|$)/i,
+    );
+    if (auditedEntity?.[1]) {
+      const candidate = cleanCompanyCandidate(auditedEntity[1]);
+      if (candidate) return shorten(candidate);
+    }
+  }
 
   return null;
 }
@@ -529,24 +581,25 @@ function findStatementMetric(
               (candidate) => Math.abs(candidate.x - yearColumnX) <= 24,
             ),
     }))
-    .filter((row) => row.candidates.length === 1);
-  const sourceLine =
-    rowsWithCurrentValue.length === 1
-      ? rowsWithCurrentValue[0]?.line
-      : matchingLines[0];
+    .filter((row) => row.candidates.length > 0);
+  const sourceLine = rowsWithCurrentValue[0]?.line ?? matchingLines[0];
   if (!sourceLine) return null;
 
-  const candidates =
-    rowsWithCurrentValue.length === 1
-      ? rowsWithCurrentValue[0]?.candidates ?? []
-      : yearColumnX === null
-        ? []
-        : numericClusters(sourceLine).filter(
-            (candidate) => Math.abs(candidate.x - yearColumnX) <= 24,
-          );
-  const candidateValue = candidates.length === 1 ? candidates[0]?.value ?? null : null;
-  const ambiguous =
-    candidates.length > 1 || rowsWithCurrentValue.length > 1;
+  const candidateValues = new Set(
+    rowsWithCurrentValue.flatMap((row) =>
+      row.candidates.length === 1 ? [row.candidates[0]!.value] : [],
+    ),
+  );
+  const hasAmbiguousRow = rowsWithCurrentValue.some(
+    (row) => row.candidates.length > 1,
+  );
+  const candidateValue =
+    rowsWithCurrentValue.length > 0 &&
+    rowsWithCurrentValue.every((row) => row.candidates.length === 1) &&
+    candidateValues.size === 1
+      ? [...candidateValues][0] ?? null
+      : null;
+  const ambiguous = hasAmbiguousRow || candidateValues.size > 1;
   const verified = Boolean(
     candidateValue &&
       year &&

@@ -1,0 +1,31 @@
+SAHM — Fix Dynamic Financial Report Analysis for Any New PDF
+
+SAHM must be able to analyze a newly uploaded financial report that has never been processed before. It must NOT depend on pre-saved reports, hardcoded company data, or manually prepared explanations.
+
+Please inspect and fix the existing upload-to-analysis workflow.
+
+Requirements:
+
+1. When a user uploads a new financial PDF, automatically extract its content and identify the company, reporting period, currency, and units.
+
+2. Extract 3–5 important financial metrics directly from the uploaded document, including their exact values, units, and verified source page references.
+
+3. Automatically generate a beginner-friendly explanation for each verified metric in Arabic or English, matching the selected language.
+
+4. Display these explanations immediately in the existing dashboard after processing. Do not require explanations to have been previously saved in MongoDB.
+
+5. If the report includes comparable previous-year figures, generate verified comparisons and educational financial signals. Otherwise, clearly indicate that comparison data is unavailable.
+
+6. Make Ask SAHM AI answer questions about the newly uploaded report using its actual extracted content, with accurate page references.
+
+7. Save the completed analysis to MongoDB for future retrieval and caching, but do not make existing database records a prerequisite for analyzing a new report.
+
+8. Handle different financial report layouts and Arabic/English text where supported. If extraction fails, clearly explain the limitation rather than inventing numbers or citations.
+
+9. Test the complete workflow using a fresh PDF that has not already been analyzed. Verify that the metrics, explanations, citations, and chatbot work without any manual preparation.
+
+10. Preserve the existing SAHM design, branding, navigation, and working features. Make only the changes needed to fix this workflow.
+
+Do not delete existing reports, publish, or push to GitHub automatically.
+
+Report what was fixed, what was actually tested, and any remaining limitations.

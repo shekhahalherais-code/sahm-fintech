@@ -9,6 +9,12 @@ Only show financial analysis derived from actual source-backed report extraction
 
 Only extract figures from rows on an identified financial statement page, aligned to the current reporting-period column. Narrative mentions elsewhere in the report are not metric evidence; without a reliable row, period, currency, unit, and page, show the metric as not verified. Keep income-statement periods (“for the year ended”) distinct from balance-sheet dates (“as at”).
 
+PDF text items can have slightly offset baselines even when they belong to the same financial row. Cluster positioned fragments using a conservative vertical tolerance, then retain x-based year-column alignment; do not broaden column matching to compensate for split rows.
+
+**Why:** Fixed coordinate buckets split comparative amounts from their labels when values are positioned just across a bucket boundary, causing valid figures to disappear or be misclassified.
+
+**How to apply:** Group PDF text fragments into rows by nearby baselines before matching statement labels and year columns. Keep ambiguous/conflicting candidates unverified and require source-row evidence for every value.
+
 **Why:** The user repeatedly asked that SAHM not invent figures or present demonstration data as financial results; broad searches previously promoted narrative percentages and blurred period-flow values with point-in-time balances. The explanation model also produced unsupported percentage claims when comparisons were available. The Zain 2025 audited statements label the 2024 comparative columns as restated, so the label must remain visible without blocking a like-for-like comparison.
 
 **How to apply:** Before changing report, dashboard, or explanation screens, distinguish visual design examples from actual API data and reuse saved-report fields and citations. Require a statement heading and current-year-column alignment for extracted figures; if comparable verified periods are missing, explain the limitation rather than filling it in. Keep status markers such as “Restated” in displayed periods, but normalize them out only when checking otherwise matching periods. Calculate percentage changes in deterministic code, have AI explain direction only, and keep percentage-claim validation strict. Treat rising liabilities as a watch item requiring sector context, not an automatic risk label.

@@ -170,6 +170,19 @@ router.post(
         extractionNotes: extracted.extractionNotes,
       });
 
+      let explanations: BilingualExplanationBundle | null = null;
+      try {
+        explanations = await getOrGenerateExplanations(saved._id.toString());
+      } catch (error) {
+        req.log.warn(
+          {
+            reportId: saved._id.toString(),
+            ...safeExplanationErrorFields(error),
+          },
+          "Initial explanation generation failed; the extracted report was saved",
+        );
+      }
+
       const response = ExtractReportResponse.parse({
         id: saved._id.toString(),
         originalFileName: saved.originalFileName,
@@ -179,7 +192,7 @@ router.post(
         unitScale: saved.unitScale,
         metrics: saved.metrics,
         extractionNotes: saved.extractionNotes,
-        explanations: saved.explanations ?? null,
+        explanations,
         createdAt: saved.createdAt,
       });
       res.status(201).json(response);
