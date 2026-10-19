@@ -388,22 +388,67 @@ function findStatementYear(lines: ReportLine[], pages: Array<number | null>): st
   return years.length > 0 ? years.sort().at(-1) ?? null : null;
 }
 
+function findYearColumnHeader(
+  lines: ReportLine[],
+  page: number,
+  year: string | null,
+): { line: ReportLine; part: PositionedTextPart } | null {
+  if (!year) return null;
+  const header = lines
+    .filter((line) => line.page === page)
+    .flatMap((line) =>
+      line.parts
+        .filter((part) => normalizeSearchText(part.text) === year)
+        .map((part) => ({ line, part })),
+    )
+    .sort((a, b) => a.part.x - b.part.x)[0];
+
+  return header ?? null;
+}
+
 function findYearColumnX(
   lines: ReportLine[],
   page: number,
   year: string | null,
 ): number | null {
-  if (!year) return null;
+  return findYearColumnHeader(lines, page, year)?.part.x ?? null;
+}
+
+function isYearColumnRestated(
+  lines: ReportLine[],
+  page: number,
+  year: string,
+  columnX: number,
+): boolean {
   const header = lines
     .filter((line) => line.page === page)
-    .flatMap((line) => line.parts)
-    .filter(
-      (part) =>
-        normalizeSearchText(part.text) === year,
+    .flatMap((line) =>
+      line.parts
+        .filter((part) => normalizeSearchText(part.text) === year)
+        .map((part) => ({ line, part })),
     )
-    .sort((a, b) => a.x - b.x)[0];
+    .sort(
+      (a, b) =>
+        Math.abs(a.part.x - columnX) - Math.abs(b.part.x - columnX),
+    )[0];
+  if (!header) return false;
 
-  return header?.x ?? null;
+  const yearCenterX = header.part.x + header.part.width / 2;
+  return lines
+    .filter(
+      (line) =>
+        line.page === page && Math.abs(line.y - header.line.y) <= 24,
+    )
+    .flatMap((line) => line.parts)
+    .some((part) => {
+      if (
+        !/\brestated\b|(?:معاد|معادة|أعيد|أعيدت)\s+عرض(?:ها|ه|ة)?/i.test(
+          part.text,
+        )
+      ) return false;
+      const markerCenterX = part.x + part.width / 2;
+      return Math.abs(markerCenterX - yearCenterX) <= 40;
+    });
 }
 
 function numericClusters(line: ReportLine): Array<{ x: number; value: string }> {
@@ -675,12 +720,26 @@ export async function extractFinancialReport(
         const currentPeriod = isBalanceMetric
           ? balanceReportingPeriod ?? reportingPeriod
           : reportingPeriod;
-        const previousPeriod = currentPeriod?.replace(statementYear, previousYear);
         const previousYearColumnX = findYearColumnX(
           lines,
           statementPage,
           previousYear,
         );
+        const previousPeriodBase = currentPeriod?.replace(
+          statementYear,
+          previousYear,
+        );
+        const previousIsRestated =
+          previousYearColumnX !== null &&
+          isYearColumnRestated(
+            lines,
+            statementPage,
+            previousYear,
+            previousYearColumnX,
+          );
+        const previousPeriod = previousPeriodBase
+          ? `${previousPeriodBase}${previousIsRestated ? " (Restated)" : ""}`
+          : null;
         if (
           !currentPeriod ||
           !previousPeriod ||

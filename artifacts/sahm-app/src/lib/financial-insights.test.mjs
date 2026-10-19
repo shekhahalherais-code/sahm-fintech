@@ -43,6 +43,28 @@ test("calculates a YoY change only for sourced, verified, matching annual metric
   });
 });
 
+test("compares restated prior-year amounts without losing their restatement label", () => {
+  const metrics = [
+    metric({ label: "Revenue", category: "revenue", reportedValue: "1,997,953", reportingPeriod: "for the year ended 31 December 2024 (Restated)", sourcePage: 119, sourceExcerpt: "Revenue — 1,997,953" }),
+    metric({ label: "Revenue", category: "revenue", reportedValue: "2,282,991", reportingPeriod: "for the year ended 31 December 2025", sourcePage: 119, sourceExcerpt: "Revenue — 2,282,991" }),
+    metric({ label: "Net profit", category: "net_profit", reportedValue: "160,540", reportingPeriod: "for the year ended 31 December 2024 (Restated)", sourcePage: 119, sourceExcerpt: "Profit for the year — 160,540" }),
+    metric({ label: "Net profit", category: "net_profit", reportedValue: "283,513", reportingPeriod: "for the year ended 31 December 2025", sourcePage: 119, sourceExcerpt: "Profit for the year — 283,513" }),
+    metric({ label: "Total assets", category: "assets", reportedValue: "5,264,109", reportingPeriod: "as at 31 December 2024 (Restated)", sourcePage: 118, sourceExcerpt: "Total Assets — 5,264,109" }),
+    metric({ label: "Total assets", category: "assets", reportedValue: "5,914,239", reportingPeriod: "as at 31 December 2025", sourcePage: 118, sourceExcerpt: "Total Assets — 5,914,239" }),
+  ];
+
+  assert.equal(getYearOverYearComparison(metrics, 1)?.percentageChange, 14.3);
+  assert.equal(getYearOverYearComparison(metrics, 3)?.percentageChange, 76.6);
+  assert.equal(getYearOverYearComparison(metrics, 5)?.percentageChange, 12.4);
+  assert.deepEqual(
+    deriveFinancialSignals(metrics).map(({ id, percentageChange }) => ({ id, percentageChange })),
+    [
+      { id: "revenue_increased", percentageChange: 14.3 },
+      { id: "profit_increased", percentageChange: 76.6 },
+    ],
+  );
+});
+
 test("compares matching as-at balance-sheet periods and rejects mismatched dates", () => {
   const metrics = [
     metric({ label: "Total assets", category: "assets", reportedValue: "100", reportingPeriod: "as at 31 December 2024", sourcePage: 20 }),

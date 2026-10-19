@@ -27,6 +27,17 @@ test("keeps balance-sheet as-at dates distinct and translates them in both langu
   );
 });
 
+test("preserves restated comparative-period status in English and Arabic", () => {
+  assert.equal(
+    localizeReportingPeriod("for the year ended 31 December 2024 (Restated)", "en"),
+    "Year ended December 31, 2024 (restated)",
+  );
+  assert.equal(
+    localizeReportingPeriod("as at 31 December 2024 (Restated)", "ar"),
+    "كما في 31 ديسمبر 2024 (معاد عرضها)",
+  );
+});
+
 test("translates quarter and half-year periods and supports Arabic-Indic digits", () => {
   assert.equal(
     localizeReportingPeriod("For the quarter ended 30 June 2025", "ar"),

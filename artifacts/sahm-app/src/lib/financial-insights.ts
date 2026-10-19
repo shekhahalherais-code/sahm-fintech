@@ -96,6 +96,7 @@ function periodSignature(period: string | null): string | null {
   return normalizeDigits(period)
     .toLowerCase()
     .replace(/(?:19|20)\d{2}/g, "{year}")
+    .replace(/\brestated\b|(?:معاد|معادة|أعيد|أعيدت)\s+عرض(?:ها|ه|ة)?/gi, " ")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();
 }

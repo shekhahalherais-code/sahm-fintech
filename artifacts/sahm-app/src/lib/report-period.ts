@@ -95,6 +95,12 @@ export function localizeReportingPeriod(
   const period = normalizeDigits(value);
   const type = getPeriodType(period);
   const date = formatDate(dateParts(period), language);
+  const restatedSuffix =
+    /\brestated\b|(?:معاد|معادة|أعيد|أعيدت)\s+عرض(?:ها|ه|ة)?/i.test(period)
+    ? language === "en"
+      ? " (restated)"
+      : " (معاد عرضها)"
+    : "";
 
   if (language === "en") {
     const prefix = type === "as-at" ? "As at"
@@ -102,7 +108,9 @@ export function localizeReportingPeriod(
       : type === "quarter" ? "Quarter ended"
         : type === "half-year" ? "Six months ended"
           : "Period ended";
-    return date ? `${prefix} ${date}` : `${prefix} — date unavailable in source`;
+    return date
+      ? `${prefix} ${date}${restatedSuffix}`
+      : `${prefix} — date unavailable in source${restatedSuffix}`;
   }
 
   const prefix = type === "as-at" ? "كما في"
@@ -110,5 +118,7 @@ export function localizeReportingPeriod(
     : type === "quarter" ? "للربع المنتهي في"
       : type === "half-year" ? "للأشهر الستة المنتهية في"
         : "للفترة المنتهية في";
-  return date ? `${prefix} ${date}` : `${prefix} تاريخ غير متوفر في المصدر`;
+  return date
+    ? `${prefix} ${date}${restatedSuffix}`
+    : `${prefix} تاريخ غير متوفر في المصدر${restatedSuffix}`;
 }
