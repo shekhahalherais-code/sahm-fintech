@@ -81,7 +81,8 @@
   border-bottom: 1px solid #e9ede5;
   background: linear-gradient(105deg,#fffefa 0%,#f6f5ed 100%);
 }
-.sahm-chat-brand-mark { width: 37px; height: 37px; border-radius: 12px 12px 12px 4px; background: var(--chat-forest); color: #fffdf7; }
+.sahm-chat-brand-mark { position: relative; width: 37px; height: 37px; overflow: hidden; border-radius: 12px 12px 12px 4px; background: var(--chat-forest); color: #fffdf7; }
+.sahm-chat-brand-mark img { position: absolute; top: 0; left: 50%; width: 44px; height: 44px; max-width: none; transform: translateX(-50%); clip-path: inset(0 0 25%); object-fit: contain; }
 .sahm-chat-heading { min-width: 0; flex: 1; }
 .sahm-chat-heading h2 { margin: 0; color: #173f34; font-size: 14px; font-weight: 800; letter-spacing: -.025em; }
 .sahm-chat-heading p { margin: 3px 0 0; color: #76867c; font-size: 10px; }

@@ -239,7 +239,9 @@ export default function AskSahmChat({ reportId, language }: Props) {
       {isOpen && (
         <section className="sahm-chat-panel" aria-label={t.title} aria-modal="false" role="dialog" data-testid="panel-ask-sahm">
           <header className="sahm-chat-header">
-            <div className="sahm-chat-brand-mark" aria-hidden="true">س</div>
+            <div className="sahm-chat-brand-mark" aria-hidden="true">
+              <img src="/sahm-icon.png" alt="" />
+            </div>
             <div className="sahm-chat-heading">
               <h2>{t.title}</h2>
               <p>{t.subtitle}</p>
