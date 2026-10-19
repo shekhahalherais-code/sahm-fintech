@@ -1,8 +1,10 @@
 import { type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
+import AskSahmChat from '@/components/AskSahmChat';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useSahmLanguage } from '@/lib/language';
 import NotFound from '@/pages/not-found';
 import HomePage from '@/pages/home';
 import ReportReviewPage from '@/pages/report-review';
@@ -17,17 +19,22 @@ import {
 const queryClient = new QueryClient();
 
 function Router() {
+  const [location] = useLocation();
+  const language = useSahmLanguage();
+  const reportId = location.match(/^\/reports\/([^/]+)(?:\/explanations)?\/?$/)?.[1];
+
   return (
-    // Keep a shared shell (sidebar, navbar) outside the boundary so it
-    // survives a page crash.
-    <RoutedErrorBoundary>
-      <Switch>
-        <Route path="/" component={HomePage} />
-        <Route path="/reports/:reportId" component={ReportReviewPage} />
-        <Route path="/reports/:reportId/explanations" component={ReportExplanationsPage} />
-        <Route component={NotFound} />
-      </Switch>
-    </RoutedErrorBoundary>
+    <>
+      <RoutedErrorBoundary>
+        <Switch>
+          <Route path="/" component={HomePage} />
+          <Route path="/reports/:reportId" component={ReportReviewPage} />
+          <Route path="/reports/:reportId/explanations" component={ReportExplanationsPage} />
+          <Route component={NotFound} />
+        </Switch>
+      </RoutedErrorBoundary>
+      <AskSahmChat key={reportId ?? 'general'} reportId={reportId} language={language} />
+    </>
   );
 }
 

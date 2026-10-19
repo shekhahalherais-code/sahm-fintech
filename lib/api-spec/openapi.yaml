@@ -158,6 +158,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /chat:
+    post:
+      operationId: askSahmChat
+      tags: [reports]
+      summary: Ask SAHM a general question or a question about a saved report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SahmChatInput"
+      responses:
+        "200":
+          description: Bilingual answer with no citations for general education or verified citations when a report is selected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialReportChatResponse"
+        "400":
+          description: Invalid question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Selected report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Chat service is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -308,6 +344,23 @@ components:
       type: object
       required: [question]
       properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        history:
+          type: array
+          maxItems: 8
+          items:
+            $ref: "#/components/schemas/FinancialReportChatHistoryItem"
+    SahmChatInput:
+      type: object
+      required: [question]
+      properties:
+        reportId:
+          type: string
+          minLength: 1
+          description: Optional saved report ID; when omitted, the assistant answers general educational questions without report citations
         question:
           type: string
           minLength: 1

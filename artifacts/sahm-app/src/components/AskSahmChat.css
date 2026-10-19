@@ -83,6 +83,8 @@
 }
 .sahm-chat-brand-mark { position: relative; width: 37px; height: 37px; overflow: hidden; border-radius: 12px 12px 12px 4px; background: var(--chat-forest); color: #fffdf7; }
 .sahm-chat-brand-mark img { position: absolute; top: 0; left: 50%; width: 44px; height: 44px; max-width: none; transform: translateX(-50%); clip-path: inset(0 0 25%); object-fit: contain; }
+.sahm-chat-launcher-mark { position: relative; overflow: hidden; }
+.sahm-chat-launcher-mark img { position: absolute; top: 0; left: 50%; width: 38px; height: 38px; max-width: none; transform: translateX(-50%); clip-path: inset(0 0 25%); object-fit: contain; }
 .sahm-chat-heading { min-width: 0; flex: 1; }
 .sahm-chat-heading h2 { margin: 0; color: #173f34; font-size: 14px; font-weight: 800; letter-spacing: -.025em; }
 .sahm-chat-heading p { margin: 3px 0 0; color: #76867c; font-size: 10px; }
@@ -126,6 +128,13 @@
 .sahm-chat-empty-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; color: #36795f; background: #eaf1e9; margin-bottom: 14px; }
 .sahm-chat-empty h3 { margin: 0; color: #254d3d; font-size: 15px; font-weight: 800; }
 .sahm-chat-empty p { max-width: 255px; margin: 7px 0 0; color: #788a80; font-size: 11px; line-height: 1.7; }
+.sahm-chat-home-empty { min-height: 0; justify-content: flex-start; padding: 6px 1px 10px; }
+.sahm-chat-home-empty h3 { max-width: 330px; margin: 0 auto 17px; font-size: 14px; line-height: 1.75; }
+.sahm-chat-suggestions { width: 100%; display: flex; flex-direction: column; gap: 7px; text-align: start; }
+.sahm-chat-suggestions > span { margin-bottom: 2px; color: #8a978d; font-size: 9px; font-weight: 800; }
+.sahm-chat-suggestion { width: 100%; min-height: 38px; padding: 9px 11px; border: 1px solid #e2e9df; border-radius: 11px; background: #fffefa; color: #365846; text-align: start; font-size: 10px; line-height: 1.55; cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+.sahm-chat-suggestion:hover:not(:disabled) { border-color: #b9ceb9; background: #f4f7f0; transform: translateY(-1px); }
+.sahm-chat-suggestion:disabled { opacity: .6; cursor: wait; }
 .sahm-chat-message { margin-bottom: 14px; animation: sahm-chat-enter .18s ease-out both; }
 .sahm-chat-message-user { display: flex; justify-content: flex-end; }
 .sahm-chat-message-user > p {

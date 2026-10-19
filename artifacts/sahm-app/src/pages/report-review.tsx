@@ -8,7 +8,6 @@ import {
 } from '@workspace/api-client-react';
 import { AlertCircle, ArrowLeft, BookOpen, ChartNoAxesCombined, Download, FileSearch, FileText, LayoutDashboard, Lightbulb, Printer, Settings2 } from 'lucide-react';
 import { Brand } from '@/components/brand';
-import AskSahmChat from '@/components/AskSahmChat';
 import { deriveFinancialSignals, getYearOverYearComparison } from '@/lib/financial-insights';
 import { setSahmLanguage, useSahmLanguage } from '@/lib/language';
 import { localizeReportingPeriod } from '@/lib/report-period';
@@ -447,7 +446,6 @@ export default function ReportReviewPage() {
       </div>
       <footer className="page-footer"><span className="footer-brand">SAHM · سهم</span><span>{t.source}: {report.originalFileName}</span></footer>
       </div>
-      <AskSahmChat key={reportId} reportId={reportId} language={language} />
     </main>
   );
 }

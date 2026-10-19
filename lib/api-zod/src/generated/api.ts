@@ -183,3 +183,44 @@ export const AskFinancialReportQuestionResponse = zod.object({
 })
 
 
+/**
+ * @summary Ask SAHM a general question or a question about a saved report
+ */
+
+export const askSahmChatBodyQuestionMax = 1000;
+
+export const askSahmChatBodyHistoryItemContentMax = 1000;
+
+export const askSahmChatBodyHistoryMax = 8;
+
+
+
+export const AskSahmChatBody = zod.object({
+  "reportId": zod.string().min(1).optional().describe('Optional saved report ID; when omitted, the assistant answers general educational questions without report citations'),
+  "question": zod.string().min(1).max(askSahmChatBodyQuestionMax),
+  "history": zod.array(zod.object({
+  "role": zod.enum(['user', 'assistant']),
+  "content": zod.string().max(askSahmChatBodyHistoryItemContentMax)
+})).max(askSahmChatBodyHistoryMax).optional()
+})
+
+
+
+
+export const AskSahmChatResponse = zod.object({
+  "answerEnglish": zod.string(),
+  "answerArabic": zod.string(),
+  "answerType": zod.enum(['verified', 'not_verified', 'general', 'advice']),
+  "sources": zod.array(zod.object({
+  "category": zod.enum(['revenue', 'net_profit', 'assets', 'liabilities', 'equity', 'other']),
+  "label": zod.string(),
+  "reportedValue": zod.string(),
+  "currency": zod.string(),
+  "unitScale": zod.enum(['units', 'thousands', 'millions']),
+  "reportingPeriod": zod.string(),
+  "sourcePage": zod.number().int().min(1),
+  "sourceExcerpt": zod.string()
+}))
+})
+
+

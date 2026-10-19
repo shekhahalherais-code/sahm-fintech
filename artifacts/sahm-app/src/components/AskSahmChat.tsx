@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { useAskFinancialReportQuestion } from '@workspace/api-client-react';
+import { useAskSahmChat } from '@workspace/api-client-react';
 import type {
   FinancialReportChatHistoryItem,
   FinancialReportChatResponse,
@@ -15,26 +15,38 @@ type ChatMessage =
   | { id: number; role: 'assistant'; response: FinancialReportChatResponse };
 
 type Props = {
-  reportId: string;
+  reportId?: string;
   language: SahmLanguage;
 };
 
 const copy = {
   en: {
-    open: 'Open report chat',
-    close: 'Close report chat',
+    open: 'Open Ask SAHM AI',
+    close: 'Close Ask SAHM AI',
     title: 'Ask SAHM',
-    subtitle: 'A guide to this report',
+    reportSubtitle: 'A guide to this report',
+    generalSubtitle: 'Financial learning, clearly explained',
     sourceFirst: 'Answers grounded in this report',
+    generalFirst: 'General financial education · no report selected',
     hello: 'What would you like to understand?',
     helloDetail: 'Ask about a figure, a reporting period, or where something appears in the report.',
+    homeWelcome: "Hi! I'm SAHM 👋 What would you like to learn about financial reports or investing in Kuwait?",
+    suggestionIntro: 'Try one of these questions',
+    suggestions: [
+      'What are stocks?',
+      'How do I read a financial report?',
+      'What is the difference between revenue and profit?',
+    ],
     placeholder: 'Ask a question about this report…',
+    generalPlaceholder: 'Ask about financial terms or Boursa Kuwait…',
     send: 'Send question',
     empty: 'Write a question before sending.',
     tooLong: 'Keep your question under 1,000 characters.',
     error: 'We couldn’t get an answer just now. Please try again.',
     loading: 'Checking the report',
     loadingDetail: 'Looking for relevant source evidence…',
+    generalLoading: 'Preparing an educational answer',
+    generalLoadingDetail: 'Keeping it general—no report is selected.',
     sources: 'Report sources',
     page: 'Page',
     excerpt: 'Source excerpt',
@@ -44,23 +56,38 @@ const copy = {
     advice: 'Investment advice not provided',
     inputLabel: 'Your question',
     newQuestion: 'Ask another question',
-    answerTag: 'SOURCE-LED ANSWER',
+    reportAnswerTag: 'SOURCE-LED ANSWER',
+    generalAnswerTag: 'GENERAL EDUCATION',
+    reportFoot: 'Answers use this report only',
+    generalFoot: 'General education · no live market data',
   },
   ar: {
-    open: 'فتح محادثة التقرير',
-    close: 'إغلاق محادثة التقرير',
+    open: 'فتح اسأل سهم AI',
+    close: 'إغلاق اسأل سهم AI',
     title: 'اسأل سهم',
-    subtitle: 'دليل لفهم هذا التقرير',
+    reportSubtitle: 'دليل لفهم هذا التقرير',
+    generalSubtitle: 'تعلم مالي مبسّط',
     sourceFirst: 'إجابات تستند إلى هذا التقرير',
+    generalFirst: 'تثقيف مالي عام · لا يوجد تقرير محدد',
     hello: 'ما الذي تود فهمه؟',
     helloDetail: 'اسأل عن رقم أو فترة مالية أو موضع معلومة في التقرير.',
+    homeWelcome: 'هلا! أنا سهم 👋 شنو ودك تعرف عن التقارير المالية أو الاستثمار في بورصة الكويت؟',
+    suggestionIntro: 'جرّب أحد هذه الأسئلة',
+    suggestions: [
+      'ما هي الأسهم؟',
+      'كيف أقرأ تقريراً مالياً؟',
+      'ما الفرق بين الإيرادات والربح؟',
+    ],
     placeholder: 'اكتب سؤالك عن هذا التقرير…',
+    generalPlaceholder: 'اسأل عن المصطلحات المالية أو بورصة الكويت…',
     send: 'إرسال السؤال',
     empty: 'اكتب سؤالاً قبل الإرسال.',
     tooLong: 'يجب ألا يتجاوز السؤال ١٬٠٠٠ حرف.',
     error: 'تعذّر الحصول على إجابة الآن. حاول مرة أخرى.',
     loading: 'جارٍ التحقق من التقرير',
     loadingDetail: 'جارٍ البحث عن دليل ذي صلة في المصدر…',
+    generalLoading: 'جارٍ إعداد شرح تعليمي',
+    generalLoadingDetail: 'إجابة عامة، لعدم تحديد تقرير.',
     sources: 'مصادر التقرير',
     page: 'الصفحة',
     excerpt: 'مقتطف من المصدر',
@@ -70,7 +97,10 @@ const copy = {
     advice: 'لا يقدم نصائح استثمارية',
     inputLabel: 'سؤالك',
     newQuestion: 'اسأل سؤالاً آخر',
-    answerTag: 'إجابة تستند إلى المصدر',
+    reportAnswerTag: 'إجابة تستند إلى المصدر',
+    generalAnswerTag: 'تثقيف مالي عام',
+    reportFoot: 'الإجابات مبنية على هذا التقرير فقط',
+    generalFoot: 'تثقيف عام · لا توجد بيانات سوق مباشرة',
   },
 } as const;
 
@@ -158,7 +188,7 @@ export default function AskSahmChat({ reportId, language }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [validationError, setValidationError] = useState('');
   const [requestError, setRequestError] = useState(false);
-  const mutation = useAskFinancialReportQuestion();
+  const mutation = useAskSahmChat();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -195,7 +225,7 @@ export default function AskSahmChat({ reportId, language }: Props) {
       inputRef.current?.focus();
       return;
     }
-    if (mutation.isPending || !reportId) return;
+    if (mutation.isPending) return;
 
     setValidationError('');
     setRequestError(false);
@@ -212,7 +242,13 @@ export default function AskSahmChat({ reportId, language }: Props) {
       setQuestion('');
     }
     mutation.mutate(
-      { reportId, data: { question: cleanQuestion, ...(history.length ? { history } : {}) } },
+      {
+        data: {
+          question: cleanQuestion,
+          ...(reportId ? { reportId } : {}),
+          ...(history.length ? { history } : {}),
+        },
+      },
       {
         onSuccess: (response) => {
           setMessages((current) => [...current, { id: ++idRef.current, role: 'assistant', response }]);
@@ -244,7 +280,7 @@ export default function AskSahmChat({ reportId, language }: Props) {
             </div>
             <div className="sahm-chat-heading">
               <h2>{t.title}</h2>
-              <p>{t.subtitle}</p>
+              <p>{reportId ? t.reportSubtitle : t.generalSubtitle}</p>
             </div>
             <button className="sahm-chat-close" type="button" aria-label={t.close} onClick={() => setIsOpen(false)} data-testid="button-close-chat">
               <X size={17} aria-hidden="true" />
@@ -254,23 +290,43 @@ export default function AskSahmChat({ reportId, language }: Props) {
 
           <div className="sahm-chat-messages" ref={messagesRef} aria-live="polite" aria-relevant="additions text">
             {messages.length === 0 && (
-              <div className="sahm-chat-empty" data-testid="text-chat-empty">
-                <span className="sahm-chat-empty-icon"><BookOpen size={20} aria-hidden="true" /></span>
-                <h3>{t.hello}</h3>
-                <p>{t.helloDetail}</p>
-              </div>
+              reportId ? (
+                <div className="sahm-chat-empty" data-testid="text-chat-empty">
+                  <span className="sahm-chat-empty-icon"><BookOpen size={20} aria-hidden="true" /></span>
+                  <h3>{t.hello}</h3>
+                  <p>{t.helloDetail}</p>
+                </div>
+              ) : (
+                <div className="sahm-chat-empty sahm-chat-home-empty" data-testid="text-chat-empty">
+                  <h3>{t.homeWelcome}</h3>
+                  <div className="sahm-chat-suggestions" aria-label={t.suggestionIntro}>
+                    <span>{t.suggestionIntro}</span>
+                    {t.suggestions.map((suggestion) => (
+                      <button
+                        type="button"
+                        className="sahm-chat-suggestion"
+                        key={suggestion}
+                        onClick={() => sendQuestion(suggestion)}
+                        disabled={mutation.isPending}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
             )}
             {messages.map((message) => (
               <article className={`sahm-chat-message sahm-chat-message-${message.role}`} key={message.id} data-testid={`chat-message-${message.role}-${message.id}`}>
                 {message.role === 'user'
                   ? <p dir="auto">{message.content}</p>
-                  : <div className="sahm-chat-assistant-wrap"><span className="sahm-chat-answer-overline">{t.answerTag}</span><AnswerContent response={message.response} language={language} /></div>}
+                  : <div className="sahm-chat-assistant-wrap"><span className="sahm-chat-answer-overline">{reportId ? t.reportAnswerTag : t.generalAnswerTag}</span><AnswerContent response={message.response} language={language} /></div>}
               </article>
             ))}
             {mutation.isPending && (
               <div className="sahm-chat-loading" role="status" data-testid="status-chat-loading">
                 <span className="sahm-chat-loading-mark" aria-hidden="true"><i /><i /><i /></span>
-                <span><strong>{t.loading}</strong><small>{t.loadingDetail}</small></span>
+                <span><strong>{reportId ? t.loading : t.generalLoading}</strong><small>{reportId ? t.loadingDetail : t.generalLoadingDetail}</small></span>
               </div>
             )}
             {requestError && (
@@ -299,9 +355,9 @@ export default function AskSahmChat({ reportId, language }: Props) {
                   if (validationError) setValidationError('');
                 }}
                 onKeyDown={onInputKeyDown}
-                placeholder={t.placeholder}
+                placeholder={reportId ? t.placeholder : t.generalPlaceholder}
                 rows={1}
-                maxLength={1200}
+                maxLength={1000}
                 aria-invalid={Boolean(validationError)}
                 aria-describedby={validationError ? 'sahm-chat-validation' : undefined}
                 data-testid="input-chat-question"
@@ -311,7 +367,7 @@ export default function AskSahmChat({ reportId, language }: Props) {
               </button>
             </div>
             <div className="sahm-chat-composer-foot">
-              <span>{language === 'ar' ? 'الإجابة مبنية على محتوى التقرير' : 'Answers use this report only'}</span>
+              <span>{reportId ? t.reportFoot : t.generalFoot}</span>
               <span>{question.length}/1,000</span>
             </div>
           </form>
@@ -324,10 +380,14 @@ export default function AskSahmChat({ reportId, language }: Props) {
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
-        aria-label={isOpen ? t.close : 'Ask SAHM AI | اسأل سهم'}
+        aria-label={isOpen ? t.close : t.open}
         data-testid="button-ask-sahm"
       >
-        {isOpen ? <X size={18} aria-hidden="true" /> : <span className="sahm-chat-launcher-mark" aria-hidden="true">س</span>}
+        {isOpen ? <X size={18} aria-hidden="true" /> : (
+          <span className="sahm-chat-launcher-mark" aria-hidden="true">
+            <img src="/sahm-icon.png" alt="" />
+          </span>
+        )}
         <span>Ask SAHM AI | اسأل سهم</span>
       </button>
     </div>

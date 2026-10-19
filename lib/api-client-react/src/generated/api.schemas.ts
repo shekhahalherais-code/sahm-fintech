@@ -146,6 +146,21 @@ export interface FinancialReportChatInput {
   history?: FinancialReportChatHistoryItem[];
 }
 
+export interface SahmChatInput {
+  /**
+     * Optional saved report ID; when omitted, the assistant answers general educational questions without report citations
+     * @minLength 1
+     */
+  reportId?: string;
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  question: string;
+  /** @maxItems 8 */
+  history?: FinancialReportChatHistoryItem[];
+}
+
 export type FinancialReportChatSourceCategory = typeof FinancialReportChatSourceCategory[keyof typeof FinancialReportChatSourceCategory];
 
 

@@ -26,3 +26,4 @@ export * from './financialReportChatSourceUnitScale';
 export * from './financialReportUnitScale';
 export * from './healthStatus';
 export * from './reportUploadInput';
+export * from './sahmChatInput';

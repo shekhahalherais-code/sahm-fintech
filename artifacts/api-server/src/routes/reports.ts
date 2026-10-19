@@ -5,6 +5,8 @@ import {
   AskFinancialReportQuestionBody,
   AskFinancialReportQuestionParams,
   AskFinancialReportQuestionResponse,
+  AskSahmChatBody,
+  type FinancialMetric,
   GenerateReportExplanationsParams,
   GenerateReportExplanationsResponse,
   ExtractReportResponse,
@@ -319,6 +321,59 @@ router.post(
       );
       res.status(503).json({
         error: "The report chat is temporarily unavailable. Please try again.",
+      });
+    }
+  },
+);
+
+router.post(
+  "/chat",
+  async (req, res): Promise<void> => {
+    const parsedBody = AskSahmChatBody.safeParse(req.body);
+    if (!parsedBody.success) {
+      res.status(400).json({ error: "Enter a question of up to 1,000 characters." });
+      return;
+    }
+
+    const reportId = parsedBody.data.reportId;
+    if (reportId && !mongoose.isValidObjectId(reportId)) {
+      res.status(404).json({ error: "Saved report not found." });
+      return;
+    }
+
+    try {
+      let metrics: FinancialMetric[] = [];
+      if (reportId) {
+        await connectMongo();
+        const saved = await FinancialAnalysis.findById(reportId).lean();
+        if (!saved) {
+          res.status(404).json({ error: "Saved report not found." });
+          return;
+        }
+        metrics = saved.metrics;
+      }
+
+      const response = await answerFinancialReportQuestion(
+        metrics,
+        parsedBody.data.question,
+        parsedBody.data.history ?? [],
+        Boolean(reportId),
+      );
+      res.json(AskFinancialReportQuestionResponse.parse(response));
+    } catch (error) {
+      if (error instanceof MongoConfigurationError) {
+        res.status(503).json({ error: error.message });
+        return;
+      }
+      req.log.error(
+        {
+          reportId: reportId ?? null,
+          ...safeExplanationErrorFields(error),
+        },
+        "Could not answer SAHM chat question",
+      );
+      res.status(503).json({
+        error: "The SAHM chat is temporarily unavailable. Please try again.",
       });
     }
   },
