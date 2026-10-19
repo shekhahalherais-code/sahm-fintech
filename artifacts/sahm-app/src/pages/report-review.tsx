@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useParams } from 'wouter';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useParams } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetFinancialReportQueryKey,
@@ -8,6 +8,7 @@ import {
 } from '@workspace/api-client-react';
 import { AlertCircle, ArrowLeft, BookOpen, ChartNoAxesCombined, Download, FileSearch, FileText, LayoutDashboard, Lightbulb, Printer, Settings2 } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { deriveFinancialSignals, getYearOverYearComparison } from '@/lib/financial-insights';
 
 const words = {
   en: {
@@ -31,6 +32,26 @@ const words = {
     print: 'Download summary', printTitle: 'SAHM report summary', printSource: 'Report source', printDisclaimer: 'This summary reproduces extracted report information and source references. It is educational only and is not investment advice.',
     metricLabels: { revenue: 'Revenue', net_profit: 'Net profit', assets: 'Total assets', liabilities: 'Total liabilities', equity: 'Total equity', other: 'Other' },
     categories: { revenue: 'Revenue', net_profit: 'Net profit', assets: 'Assets', liabilities: 'Liabilities', equity: 'Equity', other: 'Other' },
+    definition: {
+      revenue: 'Revenue is income earned from the company’s activities during the reporting period.',
+      revenueBank: 'For a bank, operating revenue reflects income from banking activities such as financing and fees.',
+      net_profit: 'Net profit is what remains after expenses, finance costs and taxes are deducted from income.',
+      assets: 'Assets are resources the company controls, such as cash, property or investments.',
+      liabilities: 'Liabilities are amounts the company owes to others.',
+      equity: 'Equity is the residual interest in the company after liabilities are deducted from assets.',
+    },
+    yoy: 'Year over year', insufficientComparison: 'Insufficient data for comparison.',
+    signals: 'Financial Signals to Watch', signalsSub: 'Evidence-led observations, not conclusions or investment advice.',
+    insufficientSignals: 'Not enough comparable, source-verified annual figures are available to identify a financial signal.',
+    signalRevenueRise: 'Revenue growth can be a positive sign, but check whether profit and cash flow also improved; growth alone does not establish financial health.',
+    signalProfitRise: 'Higher net profit can be encouraging; check revenue, expenses and cash flows before judging whether it is sustainable.',
+    signalFall: 'A decrease in {category} merits review alongside related income, costs and cash flows; it does not establish a cause.',
+    signalFlat: '{category} was unchanged year over year in the comparable figures.',
+    signalLiabilityUp: 'Liabilities represent a larger share of assets than in the prior year. Treat this as a watch item, not an automatic red flag; sector context matters, especially for banks.',
+    signalLiabilityDown: 'Liabilities represent a smaller share of assets than in the prior year. This is a comparison, not a conclusion about performance.',
+    signalLiabilityFlat: 'Liabilities represented a similar share of assets year over year. Sector context still matters, especially for banks.',
+    definitionLabel: 'In plain language',
+    direction: { increased: 'increased', decreased: 'decreased', unchanged: 'unchanged' },
   },
   ar: {
     back: 'العودة إلى رفع التقرير', overline: 'لوحة التقرير المالية', report: 'لوحة التقرير المالية', filename: 'المستند المصدر', navigation: 'مساحة التقرير', overview: 'نظرة عامة', figuresNav: 'الأرقام المستخرجة', learning: 'قراءة مبسطة', settings: 'تفاصيل التقرير', welcome: 'قراءة أوضح لهذا التقرير', welcomeSub: 'الأرقام أدناه منقولة من المستند المصدر. ولا تمثل توصية استثمارية.', summaryLabel: 'ملخص التقرير', sourcePages: 'صفحات المصدر', availableFigures: 'الأرقام المستخرجة', verifiedFigures: 'أرقام تم التحقق منها',
@@ -53,6 +74,26 @@ const words = {
     print: 'تنزيل الملخص', printTitle: 'ملخص تقرير سهم', printSource: 'مصدر التقرير', printDisclaimer: 'يعيد هذا الملخص عرض معلومات مستخرجة من التقرير ومراجع مصادرها. المحتوى للتثقيف فقط وليس نصيحة استثمارية.',
     metricLabels: { revenue: 'الإيرادات', net_profit: 'صافي الربح', assets: 'إجمالي الأصول', liabilities: 'إجمالي الالتزامات', equity: 'إجمالي حقوق الملكية', other: 'أخرى' },
     categories: { revenue: 'الإيرادات', net_profit: 'صافي الربح', assets: 'الأصول', liabilities: 'الالتزامات', equity: 'حقوق الملكية', other: 'أخرى' },
+    definition: {
+      revenue: 'الإيرادات هي الدخل الناتج عن أنشطة الشركة خلال الفترة المالية.',
+      revenueBank: 'في البنوك، تعكس الإيرادات التشغيلية الدخل من الأنشطة المصرفية مثل التمويل والرسوم.',
+      net_profit: 'صافي الربح هو ما يتبقى بعد خصم المصروفات وتكاليف التمويل والضرائب من الدخل.',
+      assets: 'الأصول هي الموارد التي تسيطر عليها الشركة، مثل النقد والعقارات والاستثمارات.',
+      liabilities: 'الالتزامات هي المبالغ المستحقة على الشركة للآخرين.',
+      equity: 'حقوق الملكية هي المتبقي من الأصول بعد خصم الالتزامات.',
+    },
+    yoy: 'مقارنة سنوية', insufficientComparison: 'لا تتوفر بيانات كافية للمقارنة',
+    signals: 'مؤشرات تستحق الانتباه', signalsSub: 'ملاحظات تستند إلى الأدلة وليست استنتاجات أو توصيات استثمارية.',
+    insufficientSignals: 'لا تتوفر أرقام سنوية موثقة وقابلة للمقارنة بما يكفي لتحديد مؤشر مالي.',
+    signalRevenueRise: 'قد تكون زيادة الإيرادات علامة إيجابية، لكن تحقق مما إذا كان صافي الربح والتدفق النقدي قد تحسنا أيضاً؛ فالنمو وحده لا يثبت سلامة الأداء.',
+    signalProfitRise: 'قد تكون زيادة صافي الربح مشجعة، لكن راجع الإيرادات والمصروفات والتدفقات النقدية قبل الحكم على استدامتها.',
+    signalFall: 'يستحق انخفاض {category} مراجعة الإيرادات والتكاليف والتدفقات النقدية المرتبطة به؛ لكنه لا يثبت سبب الانخفاض.',
+    signalFlat: 'لم تتغير {category} على أساس سنوي في الأرقام القابلة للمقارنة.',
+    signalLiabilityUp: 'أصبحت الالتزامات تمثل حصة أكبر من الأصول مقارنة بالسنة السابقة. هذا مؤشر للمراجعة وليس علامة سلبية تلقائية؛ ويهم سياق القطاع، خصوصاً البنوك.',
+    signalLiabilityDown: 'أصبحت الالتزامات تمثل حصة أقل من الأصول مقارنة بالسنة السابقة. هذه مقارنة وليست حكماً على الأداء.',
+    signalLiabilityFlat: 'ظلت حصة الالتزامات من الأصول متقاربة على أساس سنوي. يظل سياق القطاع مهماً، خصوصاً للبنوك.',
+    definitionLabel: 'بعبارة مبسطة',
+    direction: { increased: 'ارتفع', decreased: 'انخفض', unchanged: 'لم يتغير' },
   },
 };
 
@@ -99,11 +140,13 @@ export default function ReportReviewPage() {
   );
   const params = useParams<{ reportId: string }>();
   const reportId = params.reportId || '';
+  const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const query = useGetFinancialReport(reportId, {
     query: { enabled: Boolean(reportId), queryKey: getGetFinancialReportQueryKey(reportId) },
   });
   const explain = useGenerateReportExplanations();
+  const autoGenerationHandled = useRef<string | null>(null);
   const t = words[language];
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
@@ -115,9 +158,18 @@ export default function ReportReviewPage() {
 
   function generateExplanations() {
     explain.mutate({ reportId }, {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetFinancialReportQueryKey(reportId) }),
+      onSuccess: bundle => queryClient.setQueryData(getGetFinancialReportQueryKey(reportId), (old: typeof query.data) =>
+        old ? { ...old, explanations: bundle } : old),
     });
   }
+
+  useEffect(() => {
+    if (!query.data || autoGenerationHandled.current === reportId) return;
+    if (new URLSearchParams(window.location.search).get('generate') !== '1') return;
+    autoGenerationHandled.current = reportId;
+    navigate(`/reports/${encodeURIComponent(reportId)}`, { replace: true });
+    if (!query.data.explanations) generateExplanations();
+  }, [query.data, reportId]);
 
   if (query.isLoading) return <main className="loading-page" dir={dir} lang={language}>
     <section className="loading-card" role="status"><div className="loading-bars"><span /><span /><span /></div><p>{t.loading}</p></section>
@@ -151,8 +203,26 @@ export default function ReportReviewPage() {
   const explanations = report.explanations;
   const summary = explanations ? (language === 'ar' ? explanations.summaryArabic : explanations.summaryEnglish) : null;
   const verifiedCount = report.metrics.filter(metric => metric.verificationStatus === 'verified').length;
-  const metricsByCategory = new Map(report.metrics.map((metric) => [metric.category, metric]));
-  const summaryCategories = ['revenue', 'net_profit', 'assets', 'equity'] as const;
+  const summaryCategories = ['revenue', 'net_profit', 'assets', 'liabilities', 'equity'] as const;
+  const summaryMetrics = summaryCategories.map(category => {
+    const index = report.metrics.findIndex(metric => metric.category === category && metric.reportingPeriod === report.reportingPeriod);
+    const fallbackIndex = report.metrics.findIndex(metric => metric.category === category);
+    const metricIndex = index >= 0 ? index : fallbackIndex;
+    return { category, metric: metricIndex >= 0 ? report.metrics[metricIndex] : undefined, metricIndex };
+  });
+  const savedMeanings = new Map((report.explanations?.items ?? []).map(item => [item.metricIndex, language === 'ar' ? item.meaningArabic : item.meaningEnglish]));
+  const signals = deriveFinancialSignals(report.metrics);
+  const bankAware = /\b(bank|banking)\b|بنك|مصرف/i.test(report.companyName ?? '');
+  const signalCopy = (id: string, category: string) => {
+    const label = t.metricLabels[category as keyof typeof t.metricLabels] ?? category;
+    if (id === 'revenue_increased') return t.signalRevenueRise;
+    if (id === 'profit_increased') return t.signalProfitRise;
+    if (id === 'revenue_decreased' || id === 'profit_decreased') return t.signalFall.replace('{category}', label);
+    if (id === 'revenue_unchanged' || id === 'profit_unchanged') return t.signalFlat.replace('{category}', label);
+    if (id === 'liabilities_share_increased') return t.signalLiabilityUp;
+    if (id === 'liabilities_share_decreased') return t.signalLiabilityDown;
+    return t.signalLiabilityFlat;
+  };
 
   return (
     <main className="report-dashboard" dir={dir} lang={language}>
@@ -198,19 +268,29 @@ export default function ReportReviewPage() {
         </section>
 
         <section className="summary-grid" aria-label={t.summaryLabel}>
-          {summaryCategories.map((category, index) => {
-            const metric = metricsByCategory.get(category);
+          {summaryMetrics.map(({ category, metric, metricIndex }, index) => {
+            const comparison = metric ? getYearOverYearComparison(report.metrics, metricIndex) : null;
+            const explanation = metric ? savedMeanings.get(metricIndex) : undefined;
+            const definition = category === 'revenue' && bankAware ? t.definition.revenueBank : t.definition[category];
             const cardContent = <>
               <div className="summary-card-top"><span className="summary-card-label">{t.metricLabels[category]}</span><span className="summary-card-icon"><ChartNoAxesCombined size={15} /></span></div>
               <strong className="summary-card-value">{unavailable(metric?.reportedValue, t.unavailable)}</strong>
+              <p className="summary-card-definition" data-testid={`summary-definition-${category}`}>{explanation || definition}</p>
               <div className="summary-card-foot" data-testid={`summary-details-${category}`}>
                 {metric ? <>
-                  <span>{[metric.currency || t.unavailable, metric.unitScale !== 'unknown' ? t[metric.unitScale] : t.unknown].join(' · ')}</span>
-                  <span>{metric.reportingPeriod || t.unavailable}</span>
-                  <span>{t.page} {metric.sourcePage ?? t.unavailable}</span>
+                  <span>{t.currency}: {metric.currency || t.unavailable} · {t.scale}: {metric.unitScale !== 'unknown' ? t[metric.unitScale] : t.unknown}</span>
+                  <span>{t.period}: {metric.reportingPeriod || t.unavailable}</span>
+                  <span>{t.page}: {metric.sourcePage ?? t.unavailable}</span>
                   <span className={`status-pip status-${metric.verificationStatus}`} />
-                  <span>{metric.verificationStatus === 'verified' ? t.verified : metric.verificationStatus === 'unverified' ? t.unverified : t.missing}</span>
-                </> : <span className="unavailable">{t.unavailable}</span>}
+                  <span>{t.status}: {metric.verificationStatus === 'verified' ? t.verified : metric.verificationStatus === 'unverified' ? t.unverified : t.missing}</span>
+                  <span className="summary-yoy" data-testid={`summary-yoy-${category}`}>{t.yoy}: {comparison ? `${comparison.percentageChange === null ? comparison.direction : `${comparison.percentageChange > 0 ? '+' : ''}${comparison.percentageChange}%`} (${comparison.previousYear}–${comparison.currentYear}) · ${t.page} ${comparison.previousSourcePage}, ${comparison.currentSourcePage}` : t.insufficientComparison}</span>
+                </> : <>
+                  <span>{t.currency}: {t.unavailable} · {t.scale}: {t.unavailable}</span>
+                  <span>{t.period}: {t.unavailable}</span>
+                  <span>{t.page}: {t.unavailable}</span>
+                  <span>{t.status}: {t.missing}</span>
+                  <span className="summary-yoy" data-testid={`summary-yoy-${category}`}>{t.yoy}: {t.insufficientComparison}</span>
+                </>}
               </div>
             </>;
             return metric ? <Link
@@ -221,6 +301,24 @@ export default function ReportReviewPage() {
               aria-label={`${t.metricLabels[category]} · ${t.explanations}`}
             >{cardContent}</Link> : <article className={`summary-card summary-card-${index + 1}`} key={category} data-testid={`summary-${category}`}>{cardContent}</article>;
           })}
+        </section>
+
+        <section className="report-card signals-card" aria-labelledby="signals-heading" data-testid="section-financial-signals">
+          <div className="report-card-header"><div><div className="section-title" id="signals-heading">{t.signals}</div><div className="section-kicker">{t.signalsSub}</div></div></div>
+          <div className="signals-list">
+            {signals.map((signal, index) => signal.id === 'insufficient_data'
+              ? <div className="signal-item signal-neutral" key={signal.id} data-testid="signal-insufficient-data"><span className="signal-tone">{language === 'ar' ? 'محايد' : 'NEUTRAL'}</span><p>{t.insufficientSignals}</p></div>
+              : <article className={`signal-item signal-${signal.tone}`} key={`${signal.id}-${index}`} data-testid={`signal-${signal.id}`}>
+                <span className="signal-tone">{signal.tone === 'positive' ? (language === 'ar' ? 'محتمل إيجابي' : 'POTENTIAL POSITIVE') : signal.tone === 'watch' ? (language === 'ar' ? 'للمراجعة' : 'FOR REVIEW') : (language === 'ar' ? 'محايد' : 'NEUTRAL')}</span>
+                <p>{signalCopy(signal.id, signal.category ?? 'other')}</p>
+                <div className="signal-meta" data-testid={`signal-source-${index}`}>
+                  {signal.percentageChange !== null && <span>{signal.percentageChange > 0 ? '+' : ''}{signal.percentageChange}%</span>}
+                  {signal.currentYear !== null && signal.previousYear !== null && <span>{signal.previousYear}–{signal.currentYear}</span>}
+                  <span>{t.sourcePages}: {signal.sourcePages.length ? signal.sourcePages.join(', ') : t.unavailable}</span>
+                </div>
+              </article>
+            )}
+          </div>
         </section>
 
         <section className="report-card report-meta-card" id="report-details" aria-label={t.report}>
@@ -286,7 +384,7 @@ export default function ReportReviewPage() {
               {explanations.items.map((item, index) => {
                 const metric = report.metrics[item.metricIndex];
                 return <article className="explanation-item" key={`${item.metricIndex}-${index}`}>
-                  <h3>{metric?.label ?? (language === 'ar' ? 'شرح المؤشر' : 'Metric explanation')}</h3>
+                  <h3>{metric ? t.metricLabels[metric.category] ?? metric.label : (language === 'ar' ? 'شرح المؤشر' : 'Metric explanation')}</h3>
                   <p>{language === 'ar' ? item.meaningArabic : item.meaningEnglish}</p>
                   <p className="explanation-context">{language === 'ar' ? item.contextArabic : item.contextEnglish}</p>
                   <div className="metric-context">{t.page} {item.sourcePage ?? t.unavailable}</div>

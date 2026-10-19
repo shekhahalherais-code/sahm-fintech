@@ -79,7 +79,7 @@ export default function HomePage() {
     if (!file) { setError(t.select); return; }
     setError('');
     extract.mutate({ data: { file } }, {
-      onSuccess: report => navigate(`/reports/${encodeURIComponent(report.id)}/explanations?generate=1`),
+      onSuccess: report => navigate(`/reports/${encodeURIComponent(report.id)}?generate=1`),
       onError: error => {
         if (error.status !== 503) { setError(t.fail); return; }
         setError(error.message.includes('MONGODB_URI') ? t.database : t.databaseUnavailable);
